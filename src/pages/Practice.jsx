@@ -5,9 +5,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { track, EVENTS } from "@/lib/analytics";
 import { generateQuiz } from "@/lib/quizGenerator";
-import {
-  applyQuizResult, difficultyWeight, computeConceptStatus,
-} from "@/lib/learnerState";
+import { completeQuiz } from "@/lib/quizEngine";
 import StudyPanel from "@/components/StudyPanel";
 import QuizRunner from "@/components/practice/QuizRunner";
 import QuizResults from "@/components/practice/QuizResults";
@@ -50,62 +48,16 @@ export default function Practice() {
   }
 
   async function finishQuiz(finalAnswers) {
-    // Per-concept stats.
-    const stats = {};
-    quiz.questions.forEach((q, i) => {
-      const sel = finalAnswers[i]?.selected_index;
-      const correct = sel === q.correct_index;
-      if (!stats[q.concept_id]) stats[q.concept_id] = { correct: 0, total: 0, diffSum: 0 };
-      stats[q.concept_id].total++;
-      if (correct) stats[q.concept_id].correct++;
-      stats[q.concept_id].diffSum += difficultyWeight(q.difficulty);
-    });
-    const statArr = Object.entries(stats).map(([concept_id, v]) => ({
-      concept_id, correct: v.correct, total: v.total, difficultyWeight: v.diffSum / v.total,
-    }));
-
-    const masteryUpdates = applyQuizResult(statArr, concepts);
-
-    // Score + attempt record.
-    const score = quiz.questions.filter((q, i) => finalAnswers[i]?.selected_index === q.correct_index).length;
-    const total = quiz.questions.length;
-    const accuracy = total ? Math.round((score / total) * 100) : 0;
-    const answerRecords = quiz.questions.map((q, i) => ({
-      question_index: i,
-      concept_id: q.concept_id,
-      selected_index: finalAnswers[i]?.selected_index ?? -1,
-      correct: finalAnswers[i]?.selected_index === q.correct_index,
-      difficulty: q.difficulty,
-    }));
-
     try {
-      await base44.entities.QuizAttempt.create({
-        quiz_id: quiz.id,
-        subject_id: quiz.subject_id,
-        score, total, accuracy,
-        answers: answerRecords,
-        completed_at: new Date().toISOString(),
-      });
-      // Persist mastery updates.
-      const now = new Date().toISOString();
-      await base44.entities.Concept.bulkUpdate(
-        masteryUpdates.map((u) => ({
-          id: u.concept_id,
-          mastery: u.newMastery,
-          status: computeConceptStatus(u.newMastery),
-          last_practiced: now,
-        }))
-      );
-      track(EVENTS.QUIZ_COMPLETED, { quiz_id: quiz.id, score, total, accuracy });
-      answerRecords.forEach((a) => track(a.correct ? EVENTS.QUESTION_CORRECT : EVENTS.QUESTION_INCORRECT, { concept_id: a.concept_id }));
-      track(EVENTS.WEAKNESS_UPDATED, { concepts_updated: masteryUpdates.length });
+      const { updates: masteryUpdates } = await completeQuiz(quiz, finalAnswers, concepts);
       await reload();
+      setAnswers(finalAnswers);
+      setUpdates(masteryUpdates);
     } catch (e) {
       console.error(e);
+      setAnswers(finalAnswers);
+      setUpdates([]);
     }
-
-    setAnswers(finalAnswers);
-    setUpdates(masteryUpdates);
     setMode("results");
   }
 

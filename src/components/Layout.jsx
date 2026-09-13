@@ -100,14 +100,6 @@ export default function Layout() {
             <span className="text-[10px]">{n.label}</span>
           </NavLink>
         ))}
-        <NavLink to="/practice" className={({ isActive }) => `flex flex-col items-center gap-1 px-3 py-1 rounded-lg ${isActive ? "text-primary" : "text-muted-foreground"}`}>
-          <NavIcon name="Brain" className="w-5 h-5" />
-          <span className="text-[10px]">Practice</span>
-        </NavLink>
-        <NavLink to="/tool/exampilot" className="flex flex-col items-center gap-1 px-3 py-1 rounded-lg text-muted-foreground">
-          <NavIcon name="CalendarClock" className="w-5 h-5" />
-          <span className="text-[10px]">Plan</span>
-        </NavLink>
       </nav>
     </div>
   );

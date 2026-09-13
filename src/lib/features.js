@@ -3,11 +3,11 @@
 // status: "functional" | "coming_soon"
 
 export const FEATURES = [
-  { id: "studylens", title: "StudyLens", group: "study", stage: 3, status: "coming_soon", icon: "ScanLine",
+  { id: "studylens", title: "StudyLens", group: "study", stage: 3, status: "functional", icon: "ScanLine",
     desc: "Capture a problem by photo or paste it in. Get structured extraction, concept detection, and a guided learning path — not just an answer dump." },
-  { id: "homework", title: "Homework Coach", group: "study", stage: 3, status: "coming_soon", icon: "GraduationCap",
+  { id: "homework", title: "Homework Coach", group: "study", stage: 3, status: "functional", icon: "GraduationCap",
     desc: "Guided hints and checkpoints that teach the concept. The full solution is never shown by default — you do the thinking." },
-  { id: "note-quiz", title: "Note → Quiz", group: "study", stage: 3, status: "coming_soon", icon: "FileText",
+  { id: "note-quiz", title: "Note → Quiz", group: "study", stage: 3, status: "functional", icon: "FileText",
     desc: "Turn notes into validated practice questions (MCQ, True/False, short answer), then let StudyOS learn what you keep missing." },
   { id: "lecture", title: "LectureMind", group: "study", stage: 5, status: "coming_soon", icon: "Headphones",
     desc: "Transcripts → timestamped chunks, summaries, key concepts, flashcards, and exam questions. Ask the lecture and jump back to the source." },

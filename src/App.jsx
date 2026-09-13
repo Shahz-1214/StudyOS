@@ -14,6 +14,9 @@ import Profile from '@/pages/Profile';
 import Progress from '@/pages/Progress';
 import ComingSoon from '@/pages/ComingSoon';
 import Practice from '@/pages/Practice';
+import StudyLens from '@/pages/StudyLens';
+import Homework from '@/pages/Homework';
+import NoteQuiz from '@/pages/NoteQuiz';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -44,6 +47,9 @@ const AuthenticatedApp = () => {
       <Route element={<Layout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/practice" element={<Practice />} />
+        <Route path="/tool/studylens" element={<StudyLens />} />
+        <Route path="/tool/homework" element={<Homework />} />
+        <Route path="/tool/note-quiz" element={<NoteQuiz />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="/profile" element={<Profile />} />
