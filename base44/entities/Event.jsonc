@@ -1,0 +1,34 @@
+{
+  "name": "Event",
+  "type": "object",
+  "properties": {
+    "event_name": {
+      "type": "string"
+    },
+    "properties": {
+      "type": "object",
+      "default": {}
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "event_name"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "name": "Concept",
+  "type": "object",
+  "properties": {
+    "subject_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "default": ""
+    },
+    "importance": {
+      "type": "number",
+      "default": 0.5
+    },
+    "mastery": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "critical_weakness",
+        "weak",
+        "developing",
+        "strong",
+        "mastered"
+      ],
+      "default": "developing"
+    },
+    "last_practiced": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "subject_id",
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

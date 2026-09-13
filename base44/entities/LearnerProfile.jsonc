@@ -1,0 +1,60 @@
+{
+  "name": "LearnerProfile",
+  "type": "object",
+  "properties": {
+    "display_name": {
+      "type": "string",
+      "default": ""
+    },
+    "education_level": {
+      "type": "string",
+      "enum": [
+        "secondary",
+        "high_school",
+        "undergraduate",
+        "postgraduate",
+        "self_learner"
+      ],
+      "default": "high_school"
+    },
+    "main_goal": {
+      "type": "string",
+      "default": ""
+    },
+    "daily_study_minutes": {
+      "type": "number",
+      "default": 60
+    },
+    "streak": {
+      "type": "number",
+      "default": 0
+    },
+    "last_active_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "galaxy_mode": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
