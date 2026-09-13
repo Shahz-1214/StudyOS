@@ -5,12 +5,12 @@ import { track, EVENTS } from "@/lib/analytics";
 import { useEffect } from "react";
 import {
   Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine,
-  CalendarClock, CheckSquare, RefreshCw, Timer, Circle,
+  CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain,
 } from "lucide-react";
 
 const ICONS = {
   Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine,
-  CalendarClock, CheckSquare, RefreshCw, Timer,
+  CalendarClock, CheckSquare, RefreshCw, Timer, Brain,
 };
 
 function NavIcon({ name, className = "" }) {
@@ -20,6 +20,7 @@ function NavIcon({ name, className = "" }) {
 
 const PRIMARY_NAV = [
   { to: "/", label: "Home", icon: "Home", end: true },
+  { to: "/practice", label: "Practice", icon: "Brain" },
   { to: "/progress", label: "Progress", icon: "TrendingUp" },
   { to: "/profile", label: "Profile", icon: "User" },
 ];
@@ -99,9 +100,9 @@ export default function Layout() {
             <span className="text-[10px]">{n.label}</span>
           </NavLink>
         ))}
-        <NavLink to="/tool/studylens" className="flex flex-col items-center gap-1 px-3 py-1 rounded-lg text-muted-foreground">
-          <NavIcon name="ScanLine" className="w-5 h-5" />
-          <span className="text-[10px]">Study</span>
+        <NavLink to="/practice" className={({ isActive }) => `flex flex-col items-center gap-1 px-3 py-1 rounded-lg ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+          <NavIcon name="Brain" className="w-5 h-5" />
+          <span className="text-[10px]">Practice</span>
         </NavLink>
         <NavLink to="/tool/exampilot" className="flex flex-col items-center gap-1 px-3 py-1 rounded-lg text-muted-foreground">
           <NavIcon name="CalendarClock" className="w-5 h-5" />

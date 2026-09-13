@@ -73,6 +73,33 @@ export function smoothMastery(prevMastery, newMastery, alpha = 0.35) {
   return clamp(Math.round((1 - alpha) * p + alpha * n), 0, 100);
 }
 
+// Difficulty weight for the mastery formula's difficultyPerformance term.
+// Hard questions reward mastery more; easy questions reward it less.
+export function difficultyWeight(difficulty) {
+  if (difficulty === "hard") return 1;
+  if (difficulty === "medium") return 0.7;
+  return 0.4;
+}
+
+// Apply a completed quiz attempt to concept mastery through the canonical
+// formula + exponential smoothing. `conceptStats` = [{ concept_id, correct,
+// total, difficultyWeight }] per concept tested. `concepts` = current concept
+// records (to read previous mastery). Returns [{ concept_id, prevMastery,
+// newMastery }] for every concept in the attempt.
+export function applyQuizResult(conceptStats, concepts) {
+  return conceptStats.map((cs) => {
+    const prev = concepts.find((c) => c.id === cs.concept_id);
+    const prevMastery = prev?.mastery || 0;
+    const recentAccuracy = cs.total ? (cs.correct / cs.total) * 100 : 0;
+    const historicalAccuracy = prevMastery;
+    const difficultyPerformance = Math.min(100, recentAccuracy * (cs.difficultyWeight || 1));
+    const confidence = recentAccuracy; // proxy until FocusStudy confidence checks (Stage 4)
+    const raw = computeMastery({ recentAccuracy, historicalAccuracy, difficultyPerformance, confidence });
+    const newMastery = smoothMastery(prevMastery, raw, 0.4);
+    return { concept_id: cs.concept_id, prevMastery, newMastery };
+  });
+}
+
 function num(x) {
   return typeof x === "number" && !isNaN(x) ? x : 0;
 }

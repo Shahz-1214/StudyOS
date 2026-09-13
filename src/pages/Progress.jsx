@@ -1,15 +1,25 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { useAuth } from "@/lib/AuthContext";
+import { base44 } from "@/api/base44Client";
 import { computeSubjectMastery, computeConceptStatus, STATUS_LABELS, statusColor } from "@/lib/learnerState";
 import StudyPanel from "@/components/StudyPanel";
 import MasteryBar from "@/components/MasteryBar";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Loader2, TrendingUp, AlertTriangle } from "lucide-react";
 
 export default function Progress() {
   const { user } = useAuth();
   const { profile, subjects, concepts, loading, error } = useStudyOSData();
+  const [attempts, setAttempts] = useState([]);
+
+  useEffect(() => {
+    if (!user) return;
+    base44.entities.QuizAttempt.list("-completed_at", 50)
+      .then((rows) => setAttempts(rows.reverse()))
+      .catch(() => {});
+  }, [user]);
 
   const overall = useMemo(() => {
     if (!concepts.length) return 0;
@@ -62,6 +72,32 @@ export default function Progress() {
         </StudyPanel>
       </div>
 
+      {/* Accuracy trend */}
+      <StudyPanel className="p-6 mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-bold text-foreground">Quiz accuracy over time</h3>
+            <p className="text-xs text-muted-foreground">From your stored QuizAttempt history</p>
+          </div>
+          <TrendingUp className="w-4 h-4 text-primary" />
+        </div>
+        {attempts.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No quizzes yet — complete a practice quiz to see your trend.</p>
+        ) : (
+          <div className="h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={attempts.map((a, i) => ({ idx: i + 1, accuracy: a.accuracy, score: `${a.score}/${a.total}` }))} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="idx" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--border))" />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} stroke="hsl(var(--border))" />
+                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} labelFormatter={(l) => `Quiz ${l}`} formatter={(v, n, p) => [`${v}% (${p.payload.score})`, "Accuracy"]} />
+                <Line type="monotone" dataKey="accuracy" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </StudyPanel>
+
       {/* Subject mastery */}
       <StudyPanel className="p-6 mb-4">
         <h3 className="font-bold text-foreground mb-1">Subject mastery</h3>
@@ -109,7 +145,7 @@ export default function Progress() {
         </div>
         {sortedConcepts.length > 0 && (
           <p className="text-[11px] text-muted-foreground mt-4">
-            Mastery trend history will appear here once you complete quizzes (Stage 2). All values are computed deterministically from your attempt history.
+            All values are computed deterministically from your attempt history. Take a quiz in Practice to move these numbers.
           </p>
         )}
       </StudyPanel>

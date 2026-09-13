@@ -1,0 +1,86 @@
+{
+  "name": "Quiz",
+  "type": "object",
+  "properties": {
+    "subject_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "concept_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "concept_id": {
+            "type": "string"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "correct_index": {
+            "type": "number"
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ]
+          },
+          "explanation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt",
+          "options",
+          "correct_index"
+        ]
+      },
+      "default": []
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "demo",
+        "ai"
+      ],
+      "default": "demo"
+    }
+  },
+  "required": [
+    "subject_id",
+    "title",
+    "questions"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

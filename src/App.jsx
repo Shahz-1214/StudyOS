@@ -13,6 +13,7 @@ import Onboarding from '@/pages/Onboarding';
 import Profile from '@/pages/Profile';
 import Progress from '@/pages/Progress';
 import ComingSoon from '@/pages/ComingSoon';
+import Practice from '@/pages/Practice';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -42,6 +43,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/practice" element={<Practice />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="/profile" element={<Profile />} />
