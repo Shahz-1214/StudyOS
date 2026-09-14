@@ -24,6 +24,8 @@ export const EVENTS = {
   STUDY_COMPLETED: "study_completed",
   WEAKNESS_UPDATED: "weakness_updated",
   RECOMMENDATION_CLICKED: "recommendation_clicked",
+  TASK_CREATED: "task_created",
+  STUDYSYNC_RUN: "studysync_run",
   SUBSCRIPTION_VIEWED: "subscription_viewed",
   SUBSCRIPTION_STARTED: "subscription_started",
   SUBSCRIPTION_CANCELLED: "subscription_cancelled",

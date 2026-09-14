@@ -23,6 +23,8 @@ import FocusStudy from '@/pages/FocusStudy';
 import Weakness from '@/pages/Weakness';
 import LectureMind from '@/pages/LectureMind';
 import EssayCheck from '@/pages/EssayCheck';
+import Tasks from '@/pages/Tasks';
+import StudySync from '@/pages/StudySync';
 import Subscription from '@/pages/Subscription';
 
 const AuthenticatedApp = () => {
@@ -62,6 +64,8 @@ const AuthenticatedApp = () => {
         <Route path="/tool/weakness" element={<Weakness />} />
         <Route path="/tool/lecture" element={<LectureMind />} />
         <Route path="/tool/essay" element={<EssayCheck />} />
+        <Route path="/tool/tasks" element={<Tasks />} />
+        <Route path="/tool/studysync" element={<StudySync />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/progress" element={<Progress />} />
