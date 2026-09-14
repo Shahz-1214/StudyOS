@@ -100,6 +100,16 @@ export function applyQuizResult(conceptStats, concepts) {
   });
 }
 
+// Apply a FocusStudy confidence check (1-5) to a concept's mastery. Confidence
+// is the 4th term of the canonical formula; without new accuracy data we hold
+// the other terms at the previous mastery and let confidence nudge the score.
+export function applyConfidenceCheck(prevMastery, confidenceScore) {
+  const confidence = ((Math.max(1, Math.min(5, confidenceScore)) - 1) / 4) * 100;
+  const p = num(prevMastery);
+  const raw = computeMastery({ recentAccuracy: p, historicalAccuracy: p, difficultyPerformance: p, confidence });
+  return smoothMastery(p, raw, 0.25);
+}
+
 function num(x) {
   return typeof x === "number" && !isNaN(x) ? x : 0;
 }

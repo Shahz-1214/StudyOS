@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { quizQuestionsSchema, sanitizeQuestions } from '../../shared/quizQuestions.ts';
 
 export default async function(req) {
   try {
@@ -23,44 +24,10 @@ ${notes}`;
 
     const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          questions: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                prompt: { type: "string" },
-                options: { type: "array", items: { type: "string" } },
-                correct_index: { type: "number" },
-                difficulty: { type: "string" },
-                explanation: { type: "string" },
-                concept_name: { type: "string" }
-              },
-              required: ["prompt", "options", "correct_index", "explanation"]
-            }
-          }
-        },
-        required: ["questions"]
-      }
+      response_json_schema: quizQuestionsSchema
     });
 
-    const questions = (result.questions || []).map((q, i) => {
-      const options = (q.options || []).slice(0, 4);
-      while (options.length < 4) options.push(`Option ${options.length + 1}`);
-      let correct = Number(q.correct_index);
-      if (isNaN(correct) || correct < 0 || correct > 3) correct = 0;
-      return {
-        prompt: q.prompt || `Question ${i + 1}`,
-        options,
-        correct_index: correct,
-        difficulty: ["easy", "medium", "hard"].includes(q.difficulty) ? q.difficulty : "medium",
-        explanation: q.explanation || "",
-        concept_name: q.concept_name || ""
-      };
-    }).filter((q) => q.prompt && q.options.length === 4);
-
+    const questions = sanitizeQuestions(result.questions);
     if (!questions.length) return Response.json({ error: 'Could not generate valid questions from these notes' }, { status: 422 });
 
     return Response.json({ questions, source: "ai" });

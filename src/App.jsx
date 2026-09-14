@@ -17,6 +17,9 @@ import Practice from '@/pages/Practice';
 import StudyLens from '@/pages/StudyLens';
 import Homework from '@/pages/Homework';
 import NoteQuiz from '@/pages/NoteQuiz';
+import ExamPilot from '@/pages/ExamPilot';
+import FocusStudy from '@/pages/FocusStudy';
+import Weakness from '@/pages/Weakness';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -50,6 +53,9 @@ const AuthenticatedApp = () => {
         <Route path="/tool/studylens" element={<StudyLens />} />
         <Route path="/tool/homework" element={<Homework />} />
         <Route path="/tool/note-quiz" element={<NoteQuiz />} />
+        <Route path="/tool/exampilot" element={<ExamPilot />} />
+        <Route path="/tool/focus" element={<FocusStudy />} />
+        <Route path="/tool/weakness" element={<Weakness />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="/profile" element={<Profile />} />

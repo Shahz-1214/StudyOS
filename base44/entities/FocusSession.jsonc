@@ -1,0 +1,42 @@
+{
+  "name": "FocusSession",
+  "type": "object",
+  "properties": {
+    "concept_id": {
+      "type": "string"
+    },
+    "subject_id": {
+      "type": "string"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "default": 25
+    },
+    "confidence": {
+      "type": "number",
+      "default": 3
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "duration_minutes",
+    "completed_at"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

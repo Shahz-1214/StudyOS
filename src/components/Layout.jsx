@@ -5,12 +5,12 @@ import { track, EVENTS } from "@/lib/analytics";
 import { useEffect } from "react";
 import {
   Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine,
-  CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain,
+  CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain, AlertCircle,
 } from "lucide-react";
 
 const ICONS = {
   Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine,
-  CalendarClock, CheckSquare, RefreshCw, Timer, Brain,
+  CalendarClock, CheckSquare, RefreshCw, Timer, Brain, AlertCircle,
 };
 
 function NavIcon({ name, className = "" }) {

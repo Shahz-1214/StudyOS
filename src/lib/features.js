@@ -14,13 +14,15 @@ export const FEATURES = [
   { id: "essay", title: "EssayCheck", group: "study", stage: 5, status: "coming_soon", icon: "PenLine",
     desc: "Grammar, structure, argument, and readability analysis with targeted feedback. Your voice stays yours — no auto-rewrite." },
 
-  { id: "exampilot", title: "ExamPilot", group: "plan", stage: 4, status: "coming_soon", icon: "CalendarClock",
-    desc: "A deterministic scheduler that builds a revision plan around exam dates, mastery, and the time you actually have." },
+  { id: "exampilot", title: "ExamPilot", group: "plan", stage: 4, status: "functional", icon: "CalendarClock",
+    desc: "Build adaptive exams that target your weakest concepts, and generate a day-by-day revision plan around the time you actually have." },
+  { id: "weakness", title: "Weakness AI", group: "plan", stage: 4, status: "functional", icon: "AlertCircle",
+    desc: "An AI diagnostic over your mastery data — surfaces hidden weaknesses, priority order, and targeted recommendations." },
   { id: "tasks", title: "Tasks", group: "plan", stage: 4, status: "coming_soon", icon: "CheckSquare",
     desc: "One canonical task layer linking deadlines, study blocks, quizzes, and progress across every module." },
   { id: "studysync", title: "StudySync", group: "plan", stage: 4, status: "coming_soon", icon: "RefreshCw",
     desc: "The connection layer — every quiz, weakness, and exam event becomes the right task or plan update." },
-  { id: "focus", title: "FocusStudy", group: "plan", stage: 4, status: "coming_soon", icon: "Timer",
+  { id: "focus", title: "FocusStudy", group: "plan", stage: 4, status: "functional", icon: "Timer",
     desc: "A real study timer with confidence checks before and after. Results feed straight back into your mastery." },
 ];
 
