@@ -89,14 +89,14 @@ This web/PWA is **not** itself a native Galaxy Store app — it is the productio
 
 ## 10. Build stages
 
-1. **Foundation (live):** auth, LearnerProfile, subjects, concepts, Event analytics, dashboard, onboarding, profile, read-only progress.
-2. Learning engine: questions, quizzes, attempts, deterministic mastery updates, progress charts.
-3. Core AI: StudyLens, Homework Coach, Note → Quiz.
-4. Adaptive planning: Weakness AI, ExamPilot, StudySync, FocusStudy.
-5. Advanced content: LectureMind, EssayCheck.
-6. Subscriptions: entitlement abstraction + RevenueCat-compatible contracts.
-7. Polish: responsive split layouts, error UX, accessibility, performance, onboarding, analytics.
-8. Export: GitHub sync, this document, native Android/Galaxy handoff spec.
+1. **Foundation ✓ FUNCTIONAL:** auth, LearnerProfile, subjects, concepts, Event analytics, dashboard, onboarding, profile, read-only progress.
+2. **Learning engine ✓ FUNCTIONAL:** questions, quizzes, attempts, deterministic mastery updates, progress charts.
+3. **Core AI ✓ FUNCTIONAL:** StudyLens, Homework Coach, Note → Quiz.
+4. **Adaptive planning ✓ FUNCTIONAL:** Weakness AI, ExamPilot, FocusStudy. (StudySync + Tasks: NOT YET IMPLEMENTED — task layer / calendar connector.)
+5. **Advanced content ✓ FUNCTIONAL:** LectureMind (transcribe → chunks → flashcards → Q&A), EssayCheck (rubric, no rewrite).
+6. **Subscriptions ✓ FUNCTIONAL:** `SubscriptionState` entity + `checkEntitlement` function + paywall UI. RevenueCat purchase is the native step (see NATIVE_HANDOFF.md).
+7. **Polish ✓ FUNCTIONAL:** global ErrorBoundary, Galaxy/foldable split layout (Homework Coach), loading/empty states, centralized analytics.
+8. **Export ✓ FUNCTIONAL:** GitHub sync, this document, native Android/Galaxy handoff spec (NATIVE_HANDOFF.md).
 
 ## 11. Status legend
 
@@ -104,4 +104,4 @@ This web/PWA is **not** itself a native Galaxy Store app — it is the productio
 - **DEMO FALLBACK** — deterministic stand-in, clearly labelled, used only when AI is unavailable.
 - **NOT YET IMPLEMENTED** — planned for a later stage; shown via an honest status page, never faked.
 
-Stage 1 features are FUNCTIONAL. The ten AI tools route to NOT YET IMPLEMENTED status pages until their stage ships.
+Stages 1–7 are FUNCTIONAL end to end on real persisted data. The ten modules: StudyLens, Homework Coach, Note → Quiz, LectureMind, EssayCheck (Study group); ExamPilot, Weakness AI, FocusStudy (Plan group); Tasks and StudySync remain NOT YET IMPLEMENTED (shown via an honest status page, never faked). The web/PWA is the production-ready foundation; the native Android/Galaxy client wraps it and adds RevenueCat purchases + Galaxy-specific capabilities (NATIVE_HANDOFF.md).

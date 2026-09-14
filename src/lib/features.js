@@ -9,9 +9,9 @@ export const FEATURES = [
     desc: "Guided hints and checkpoints that teach the concept. The full solution is never shown by default — you do the thinking." },
   { id: "note-quiz", title: "Note → Quiz", group: "study", stage: 3, status: "functional", icon: "FileText",
     desc: "Turn notes into validated practice questions (MCQ, True/False, short answer), then let StudyOS learn what you keep missing." },
-  { id: "lecture", title: "LectureMind", group: "study", stage: 5, status: "coming_soon", icon: "Headphones",
-    desc: "Transcripts → timestamped chunks, summaries, key concepts, flashcards, and exam questions. Ask the lecture and jump back to the source." },
-  { id: "essay", title: "EssayCheck", group: "study", stage: 5, status: "coming_soon", icon: "PenLine",
+  { id: "lecture", title: "LectureMind", group: "study", stage: 5, status: "functional", icon: "Headphones",
+    desc: "Upload a lecture → transcript, key-point chunks, summary, concepts, flashcards, and a Q&A over the source." },
+  { id: "essay", title: "EssayCheck", group: "study", stage: 5, status: "functional", icon: "PenLine",
     desc: "Grammar, structure, argument, and readability analysis with targeted feedback. Your voice stays yours — no auto-rewrite." },
 
   { id: "exampilot", title: "ExamPilot", group: "plan", stage: 4, status: "functional", icon: "CalendarClock",

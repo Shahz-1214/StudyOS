@@ -13,6 +13,7 @@ import Onboarding from '@/pages/Onboarding';
 import Profile from '@/pages/Profile';
 import Progress from '@/pages/Progress';
 import ComingSoon from '@/pages/ComingSoon';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import Practice from '@/pages/Practice';
 import StudyLens from '@/pages/StudyLens';
 import Homework from '@/pages/Homework';
@@ -20,6 +21,9 @@ import NoteQuiz from '@/pages/NoteQuiz';
 import ExamPilot from '@/pages/ExamPilot';
 import FocusStudy from '@/pages/FocusStudy';
 import Weakness from '@/pages/Weakness';
+import LectureMind from '@/pages/LectureMind';
+import EssayCheck from '@/pages/EssayCheck';
+import Subscription from '@/pages/Subscription';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -56,6 +60,9 @@ const AuthenticatedApp = () => {
         <Route path="/tool/exampilot" element={<ExamPilot />} />
         <Route path="/tool/focus" element={<FocusStudy />} />
         <Route path="/tool/weakness" element={<Weakness />} />
+        <Route path="/tool/lecture" element={<LectureMind />} />
+        <Route path="/tool/essay" element={<EssayCheck />} />
+        <Route path="/subscription" element={<Subscription />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="/profile" element={<Profile />} />
@@ -74,7 +81,9 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
-          <AuthenticatedApp />
+          <ErrorBoundary>
+            <AuthenticatedApp />
+          </ErrorBoundary>
         </Router>
         <Toaster />
       </QueryClientProvider>

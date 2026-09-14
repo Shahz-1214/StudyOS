@@ -11,7 +11,7 @@ export default function Homework() {
   const { user } = useAuth();
   const { profile, loading } = useStudyOSData();
   const [problem, setProblem] = useState("");
-  const [hints, setHints] = useState([]); // [{ hint, hint_level, teaching_note, is_final }]
+  const [hints, setHints] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -47,7 +47,7 @@ export default function Homework() {
   }
 
   return (
-    <div className="max-w-[820px] mx-auto px-5 md:px-8 py-6 md:py-8">
+    <div className="max-w-[1040px] mx-auto px-5 md:px-8 py-6 md:py-8">
       <div className="mb-6">
         <div className="eyebrow">Study · Stage 3</div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mt-1 flex items-center gap-2">
@@ -56,44 +56,59 @@ export default function Homework() {
         <p className="text-sm text-muted-foreground mt-1">Guided hints that teach the concept. The full solution is never shown by default — you do the thinking.</p>
       </div>
 
-      <StudyPanel className="p-6 mb-4">
-        <label className="eyebrow block mb-2">Your problem</label>
-        <textarea
-          value={problem}
-          onChange={(e) => setProblem(e.target.value)}
-          placeholder="Paste the problem you're stuck on…"
-          className="w-full min-h-[120px] rounded-lg border border-border bg-card px-4 py-3 text-[14px] text-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        <div className="flex items-center justify-between mt-4">
-          <span className="text-[11px] text-muted-foreground">
-            {hints.length ? `Hint level ${currentLevel} of 4` : "Start at level 1 — a guiding question"}
-          </span>
-          <div className="flex gap-2">
-            {hints.length > 0 && !isFinal && (
-              <button onClick={reset} className="rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-4 py-2.5 hover:bg-secondary/70">
-                Reset
-              </button>
-            )}
-            <button
-              onClick={getHint}
-              disabled={busy || !problem.trim() || isFinal}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-5 py-2.5 disabled:opacity-40 hover:opacity-90"
-            >
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
-              {hints.length === 0 ? "Get a hint" : isFinal ? "Solution shown" : "Next hint"}
-            </button>
-          </div>
+      {/* Galaxy/foldable-ready split: problem on the left, hints on the right.
+          Stacks on mobile, side-by-side on tablet/desktop. */}
+      <div className="grid md:grid-cols-2 gap-4 items-start">
+        <div className="md:sticky md:top-6 space-y-4">
+          <StudyPanel className="p-6">
+            <label className="eyebrow block mb-2">Your problem</label>
+            <textarea
+              value={problem}
+              onChange={(e) => setProblem(e.target.value)}
+              placeholder="Paste the problem you're stuck on…"
+              className="w-full min-h-[140px] rounded-lg border border-border bg-card px-4 py-3 text-[14px] text-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <div className="flex items-center justify-between mt-4">
+              <span className="text-[11px] text-muted-foreground">
+                {hints.length ? `Hint level ${currentLevel} of 4` : "Start at level 1 — a guiding question"}
+              </span>
+              <div className="flex gap-2">
+                {hints.length > 0 && !isFinal && (
+                  <button onClick={reset} className="rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-4 py-2.5 hover:bg-secondary/70">
+                    Reset
+                  </button>
+                )}
+                <button
+                  onClick={getHint}
+                  disabled={busy || !problem.trim() || isFinal}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-5 py-2.5 disabled:opacity-40 hover:opacity-90"
+                >
+                  {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lightbulb className="w-4 h-4" />}
+                  {hints.length === 0 ? "Get a hint" : isFinal ? "Solution shown" : "Next hint"}
+                </button>
+              </div>
+            </div>
+          </StudyPanel>
+
+          {error && (
+            <StudyPanel className="p-4 flex items-center gap-2 text-destructive text-sm">
+              <AlertTriangle className="w-4 h-4" /> {error}
+            </StudyPanel>
+          )}
+
+          {hints.length === 0 && (
+            <p className="text-[11px] text-muted-foreground px-1">Tip: paste a problem from any subject — math, physics, chemistry, economics. Hints escalate across four levels.</p>
+          )}
         </div>
-      </StudyPanel>
 
-      {error && (
-        <StudyPanel className="p-4 mb-4 flex items-center gap-2 text-destructive text-sm">
-          <AlertTriangle className="w-4 h-4" /> {error}
-        </StudyPanel>
-      )}
-
-      {hints.length > 0 && (
         <div className="space-y-3">
+          {hints.length === 0 && (
+            <StudyPanel className="p-8 text-center">
+              <Lightbulb className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Your hints will appear here. Enter a problem and ask for a hint to begin.</p>
+            </StudyPanel>
+          )}
+
           {hints.map((h, i) => (
             <StudyPanel key={i} className="p-5">
               <div className="flex items-center gap-2 mb-2">
@@ -108,7 +123,8 @@ export default function Homework() {
               )}
             </StudyPanel>
           ))}
-          {!isFinal && (
+
+          {hints.length > 0 && !isFinal && (
             <p className="text-[11px] text-muted-foreground px-1">Still stuck? Request the next hint — each level reveals a little more.</p>
           )}
           {isFinal && (
@@ -117,7 +133,7 @@ export default function Homework() {
             </Link>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

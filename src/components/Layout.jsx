@@ -5,12 +5,12 @@ import { track, EVENTS } from "@/lib/analytics";
 import { useEffect } from "react";
 import {
   Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine,
-  CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain, AlertCircle,
+  CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain, AlertCircle, CreditCard,
 } from "lucide-react";
 
 const ICONS = {
   Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine,
-  CalendarClock, CheckSquare, RefreshCw, Timer, Brain, AlertCircle,
+  CalendarClock, CheckSquare, RefreshCw, Timer, Brain, AlertCircle, CreditCard,
 };
 
 function NavIcon({ name, className = "" }) {
@@ -72,6 +72,12 @@ export default function Layout() {
               <span>{f.title}</span>
             </NavLink>
           ))}
+
+          <div className="eyebrow px-3 pt-5 pb-2">Account</div>
+          <NavLink to="/subscription" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+            <NavIcon name="CreditCard" className="w-4 h-4" />
+            <span>Subscription</span>
+          </NavLink>
         </nav>
 
         <div className="px-3 py-3 border-t border-border">
