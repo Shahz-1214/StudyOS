@@ -1,0 +1,149 @@
+{
+  "name": "BoardResource",
+  "type": "object",
+  "properties": {
+    "resource_id": {
+      "type": "string",
+      "default": ""
+    },
+    "board_id": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string",
+      "default": ""
+    },
+    "education_system": {
+      "type": "string",
+      "default": ""
+    },
+    "qualification": {
+      "type": "string",
+      "default": ""
+    },
+    "level": {
+      "type": "string",
+      "default": ""
+    },
+    "class_or_year": {
+      "type": "string",
+      "default": ""
+    },
+    "board": {
+      "type": "string",
+      "default": ""
+    },
+    "subject_code": {
+      "type": "string",
+      "default": ""
+    },
+    "subject_name": {
+      "type": "string",
+      "default": ""
+    },
+    "syllabus_year": {
+      "type": "string",
+      "default": ""
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": [
+        "official_syllabus",
+        "official_past_paper",
+        "official_specimen",
+        "official_mark_scheme",
+        "official_model_paper",
+        "official_textbook",
+        "notes",
+        "guide",
+        "quiz",
+        "youtube",
+        "book",
+        "exam_timetable",
+        "other"
+      ],
+      "default": "other"
+    },
+    "title": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "default": ""
+    },
+    "authority_level": {
+      "type": "string",
+      "enum": [
+        "official",
+        "official_textbook_authority",
+        "board_mapped_supplementary",
+        "general_supplementary"
+      ],
+      "default": "general_supplementary"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "failed",
+        "unverified"
+      ],
+      "default": "verified"
+    },
+    "verified_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "access_type": {
+      "type": "string",
+      "default": "Public"
+    },
+    "provenance": {
+      "type": "string",
+      "default": ""
+    },
+    "copyright_note": {
+      "type": "string",
+      "default": ""
+    },
+    "last_checked": {
+      "type": "string",
+      "format": "date"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "notes": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "required": [
+    "board_id",
+    "title",
+    "url",
+    "resource_type"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

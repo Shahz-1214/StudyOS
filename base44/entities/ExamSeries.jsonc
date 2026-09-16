@@ -1,0 +1,92 @@
+{
+  "name": "ExamSeries",
+  "type": "object",
+  "properties": {
+    "board_id": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string",
+      "default": ""
+    },
+    "board": {
+      "type": "string",
+      "default": ""
+    },
+    "exam_series": {
+      "type": "string"
+    },
+    "year": {
+      "type": "string",
+      "default": ""
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "typical_window": {
+      "type": "string",
+      "default": ""
+    },
+    "zone": {
+      "type": "string",
+      "default": ""
+    },
+    "source_url": {
+      "type": "string",
+      "default": ""
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "verified_window",
+        "failed",
+        "unverified"
+      ],
+      "default": "verified_window"
+    },
+    "verified_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "last_checked": {
+      "type": "string",
+      "format": "date"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "provenance": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "required": [
+    "board_id",
+    "exam_series"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

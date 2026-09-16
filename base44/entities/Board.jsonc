@@ -1,0 +1,109 @@
+{
+  "name": "Board",
+  "type": "object",
+  "properties": {
+    "board_id": {
+      "type": "string"
+    },
+    "board": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string",
+      "default": ""
+    },
+    "education_system": {
+      "type": "string",
+      "default": ""
+    },
+    "qualification": {
+      "type": "string",
+      "default": ""
+    },
+    "level": {
+      "type": "string",
+      "default": ""
+    },
+    "type": {
+      "type": "string",
+      "default": ""
+    },
+    "current_status": {
+      "type": "string",
+      "default": ""
+    },
+    "exam_window": {
+      "type": "string",
+      "default": ""
+    },
+    "requires_subboard": {
+      "type": "boolean",
+      "default": false
+    },
+    "official_sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "supplementary": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "subject_rule": {
+      "type": "string",
+      "default": ""
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "failed",
+        "unverified"
+      ],
+      "default": "verified"
+    },
+    "verified_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "last_checked": {
+      "type": "string",
+      "format": "date"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "provenance": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "required": [
+    "board_id",
+    "board"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
