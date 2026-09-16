@@ -37,10 +37,6 @@ export default function Resources() {
     })();
   }, [user]);
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
-  if (!user) return <Navigate to="/" replace />;
-  if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
-
   const countries = useMemo(() => [...new Set(boards.map((b) => b.country))].sort(), [boards]);
   const countryBoards = useMemo(() => boards.filter((b) => b.country === country), [boards, country]);
   const selectedBoard = useMemo(() => boards.find((b) => b.board_id === boardId), [boards, boardId]);
@@ -69,6 +65,10 @@ export default function Resources() {
     }
     return g;
   }, [boardResources]);
+
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  if (!user) return <Navigate to="/" replace />;
+  if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 
   return (
     <div className="max-w-[960px] mx-auto px-5 md:px-8 py-6 md:py-8">
