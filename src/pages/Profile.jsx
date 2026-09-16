@@ -7,7 +7,8 @@ import { SUBJECT_PRESETS, EDUCATION_LEVELS, GOAL_PRESETS, STUDY_TIME_OPTIONS } f
 import { computeConceptStatus, STATUS_LABELS, statusColor, computeSubjectMastery } from "@/lib/learnerState";
 import StudyPanel from "@/components/StudyPanel";
 import MasteryBar from "@/components/MasteryBar";
-import { Loader2, Plus, Trash2, Check, X, BookOpen } from "lucide-react";
+import ThemePicker from "@/components/ThemePicker";
+import { Loader2, Plus, Trash2, Check, X, BookOpen, Palette } from "lucide-react";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -150,6 +151,16 @@ export default function Profile() {
             </select>
           </div>
         </div>
+      </StudyPanel>
+
+      {/* Background theme */}
+      <StudyPanel className="p-5 mb-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Palette className="w-4 h-4 text-primary" />
+          <div className="eyebrow">Background theme</div>
+        </div>
+        <p className="text-[12px] text-muted-foreground mb-3">Pick a background tint for the whole app. Your choice is saved on this device.</p>
+        <ThemePicker />
       </StudyPanel>
 
       {/* Add subject */}
