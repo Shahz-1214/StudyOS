@@ -5,12 +5,12 @@ import { track, EVENTS } from "@/lib/analytics";
 import { useEffect } from "react";
 import {
   Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine,
-  CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain, AlertCircle, CreditCard,
+  CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain, AlertCircle, CreditCard, Settings, Layers, Archive,
 } from "lucide-react";
 
 const ICONS = {
   Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine,
-  CalendarClock, CheckSquare, RefreshCw, Timer, Brain, AlertCircle, CreditCard,
+  CalendarClock, CheckSquare, RefreshCw, Timer, Brain, AlertCircle, CreditCard, Settings, Layers, Archive,
 };
 
 function NavIcon({ name, className = "" }) {
@@ -58,6 +58,10 @@ export default function Layout() {
           ))}
 
           <div className="eyebrow px-3 pt-5 pb-2">Study</div>
+          <NavLink to="/subject-hub" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+            <NavIcon name="Layers" className="w-4 h-4" />
+            <span>Subject Hub</span>
+          </NavLink>
           {STUDY_FEATURES.map((f) => (
             <NavLink key={f.id} to={`/tool/${f.id}`} className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
               <NavIcon name={f.icon} className="w-4 h-4" />
@@ -66,6 +70,10 @@ export default function Layout() {
           ))}
 
           <div className="eyebrow px-3 pt-5 pb-2">Plan</div>
+          <NavLink to="/exam-vault" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+            <NavIcon name="Archive" className="w-4 h-4" />
+            <span>Exam Vault</span>
+          </NavLink>
           {PLAN_FEATURES.map((f) => (
             <NavLink key={f.id} to={`/tool/${f.id}`} className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
               <NavIcon name={f.icon} className="w-4 h-4" />
@@ -74,6 +82,10 @@ export default function Layout() {
           ))}
 
           <div className="eyebrow px-3 pt-5 pb-2">Account</div>
+          <NavLink to="/settings" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+            <NavIcon name="Settings" className="w-4 h-4" />
+            <span>App Settings</span>
+          </NavLink>
           <NavLink to="/subscription" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
             <NavIcon name="CreditCard" className="w-4 h-4" />
             <span>Subscription</span>

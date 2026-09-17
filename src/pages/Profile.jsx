@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { useAuth } from "@/lib/AuthContext";
@@ -8,7 +8,7 @@ import { computeConceptStatus, STATUS_LABELS, statusColor, computeSubjectMastery
 import StudyPanel from "@/components/StudyPanel";
 import MasteryBar from "@/components/MasteryBar";
 import ThemePicker from "@/components/ThemePicker";
-import { Loader2, Plus, Trash2, Check, X, BookOpen, Palette } from "lucide-react";
+import { Loader2, Plus, Trash2, Check, X, BookOpen, Palette, Layers, Settings } from "lucide-react";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -150,6 +150,19 @@ export default function Profile() {
               {STUDY_TIME_OPTIONS.map((t) => <option key={t} value={t}>{t} min/day</option>)}
             </select>
           </div>
+        </div>
+      </StudyPanel>
+
+      {/* Quick links */}
+      <StudyPanel className="p-5 mb-4">
+        <div className="eyebrow mb-3">Quick links</div>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/subject-hub" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] hover:border-primary">
+            <Layers className="w-4 h-4" /> Subject Hub
+          </Link>
+          <Link to="/settings" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] hover:border-primary">
+            <Settings className="w-4 h-4" /> App settings
+          </Link>
         </div>
       </StudyPanel>
 

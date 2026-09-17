@@ -1,0 +1,58 @@
+{
+  "name": "SavedPaper",
+  "type": "object",
+  "properties": {
+    "resource_id": {
+      "type": "string",
+      "default": ""
+    },
+    "board_id": {
+      "type": "string",
+      "default": ""
+    },
+    "title": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "resource_type": {
+      "type": "string",
+      "default": "official_past_paper"
+    },
+    "authority_level": {
+      "type": "string",
+      "default": "official"
+    },
+    "provider": {
+      "type": "string",
+      "default": ""
+    },
+    "subject_id": {
+      "type": "string",
+      "default": ""
+    },
+    "note": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "required": [
+    "title",
+    "url"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

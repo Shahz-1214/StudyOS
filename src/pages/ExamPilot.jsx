@@ -8,7 +8,7 @@ import { completeQuiz } from "@/lib/quizEngine";
 import StudyPanel from "@/components/StudyPanel";
 import QuizRunner from "@/components/practice/QuizRunner";
 import QuizResults from "@/components/practice/QuizResults";
-import { Loader2, CalendarClock, ClipboardList, Sparkles, AlertTriangle, Target, Clock, ListChecks, FileText } from "lucide-react";
+import { Loader2, CalendarClock, ClipboardList, Sparkles, AlertTriangle, Target, Clock, ListChecks, FileText, Archive } from "lucide-react";
 
 export default function ExamPilot() {
   const { user } = useAuth();
@@ -121,6 +121,9 @@ export default function ExamPilot() {
         </Link>
         <Link to="/exam-dates" className="inline-flex items-center gap-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-4 py-2 hover:bg-secondary/70">
           <CalendarClock className="w-4 h-4" /> Exam Dates
+        </Link>
+        <Link to="/exam-vault" className="inline-flex items-center gap-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-4 py-2 hover:bg-secondary/70">
+          <Archive className="w-4 h-4" /> Exam Vault
         </Link>
       </div>
 

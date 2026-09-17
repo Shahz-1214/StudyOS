@@ -1,6 +1,7 @@
 // Card for a past-paper resource. Clearly labels official past papers vs
-// specimen/sample papers vs third-party supplementary material.
-import { ExternalLink, ShieldCheck } from "lucide-react";
+// specimen/sample papers vs third-party supplementary material. Includes a
+// bookmark button to save the paper to the Exam Vault.
+import { ExternalLink, ShieldCheck, Bookmark } from "lucide-react";
 
 const OFFICIAL_PAPER_TYPES = [
   "official_past_paper",
@@ -23,28 +24,35 @@ const TYPE_STYLE = {
   official_model_paper: "bg-violet-100 text-violet-700 border-violet-300",
 };
 
-export default function PastPaperCard({ resource }) {
+export default function PastPaperCard({ resource, saved, onToggleSave }) {
   const isOfficialPaper = OFFICIAL_PAPER_TYPES.includes(resource.resource_type);
   const label = isOfficialPaper ? TYPE_LABEL[resource.resource_type] : "Third-party supplementary";
   const style = isOfficialPaper ? TYPE_STYLE[resource.resource_type] : "bg-amber-100 text-amber-700 border-amber-300";
 
   return (
-    <a
-      href={resource.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="study-panel p-4 block hover:opacity-90 transition-opacity"
-    >
+    <div className="study-panel p-4">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <a href={resource.url} target="_blank" rel="noopener noreferrer" className="min-w-0 hover:opacity-80">
           <div className="text-[14px] font-semibold text-foreground leading-snug">{resource.title}</div>
           <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
             <ExternalLink className="w-3 h-3" /> {resource.provider}
           </div>
+        </a>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${style}`}>
+            {label}
+          </span>
+          {onToggleSave && (
+            <button
+              onClick={() => onToggleSave(resource)}
+              title={saved ? "Remove from vault" : "Save to vault"}
+              aria-label={saved ? "Remove from vault" : "Save to vault"}
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              <Bookmark className="w-4 h-4" fill={saved ? "currentColor" : "none"} />
+            </button>
+          )}
         </div>
-        <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${style}`}>
-          {label}
-        </span>
       </div>
 
       {resource.notes && (
@@ -54,6 +62,6 @@ export default function PastPaperCard({ resource }) {
       <div className="text-[10px] text-muted-foreground mt-2.5 flex items-center gap-1">
         <ShieldCheck className="w-3 h-3" /> Verified {resource.verified_on}
       </div>
-    </a>
+    </div>
   );
 }

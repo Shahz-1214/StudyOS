@@ -5,7 +5,7 @@ import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { base44 } from "@/api/base44Client";
 import StudyPanel from "@/components/StudyPanel";
 import PastPaperCard from "@/components/resources/PastPaperCard";
-import { Loader2, FileText, AlertTriangle, ChevronLeft, Globe, Filter, ExternalLink } from "lucide-react";
+import { Loader2, FileText, AlertTriangle, ChevronLeft, ChevronRight, Globe, Filter, ExternalLink } from "lucide-react";
 
 const OFFICIAL_PAPER_TYPES = ["official_past_paper", "official_specimen", "official_mark_scheme", "official_model_paper"];
 
@@ -33,6 +33,7 @@ export default function PastPapers() {
   const [subject, setSubject] = useState("");
   const [year, setYear] = useState("");
   const [component, setComponent] = useState("");
+  const [savedMap, setSavedMap] = useState({});
 
   useEffect(() => {
     if (!user) return;
@@ -50,6 +51,13 @@ export default function PastPapers() {
       } catch { /* best-effort */ }
       setBusy(false);
     })();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    base44.entities.SavedPaper.list("-created_date", 200)
+      .then((rows) => setSavedMap(Object.fromEntries(rows.map((r) => [r.resource_id, r.id]))))
+      .catch(() => {});
   }, [user]);
 
   const countries = useMemo(() => [...new Set(boards.map((b) => b.country))].sort(), [boards]);
@@ -91,15 +99,41 @@ export default function PastPapers() {
 
   const sessionInfo = session ? boardSessions.find((s) => s.exam_series === session) : null;
 
+  async function toggleSave(r) {
+    const existing = savedMap[r.resource_id];
+    try {
+      if (existing) {
+        await base44.entities.SavedPaper.delete(existing);
+        setSavedMap((m) => { const n = { ...m }; delete n[r.resource_id]; return n; });
+      } else {
+        const created = await base44.entities.SavedPaper.create({
+          resource_id: r.resource_id || "",
+          board_id: r.board_id || "",
+          title: r.title,
+          url: r.url,
+          resource_type: r.resource_type,
+          authority_level: r.authority_level,
+          provider: r.provider || "",
+          subject_id: "",
+          note: "",
+        });
+        setSavedMap((m) => ({ ...m, [r.resource_id]: created.id }));
+      }
+    } catch { /* ignore */ }
+  }
+
   if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/" replace />;
   if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 
   return (
     <div className="max-w-[960px] mx-auto px-5 md:px-8 py-6 md:py-8">
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <Link to="/tool/exampilot" className="inline-flex items-center gap-1 text-[12px] text-muted-foreground hover:text-foreground">
           <ChevronLeft className="w-4 h-4" /> Back to ExamPilot
+        </Link>
+        <Link to="/exam-vault" className="inline-flex items-center gap-1 text-[12px] text-primary hover:underline">
+          Exam Vault <ChevronRight className="w-3.5 h-3.5" />
         </Link>
       </div>
       <div className="mb-6">
@@ -197,7 +231,7 @@ export default function PastPapers() {
             </StudyPanel>
           ) : (
             <div className="grid sm:grid-cols-2 gap-3">
-              {filtered.map((r) => <PastPaperCard key={r.id} resource={r} />)}
+              {filtered.map((r) => <PastPaperCard key={r.id} resource={r} saved={!!savedMap[r.resource_id]} onToggleSave={toggleSave} />)}
             </div>
           )}
         </>
