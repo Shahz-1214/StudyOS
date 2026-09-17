@@ -27,9 +27,9 @@ import Tasks from '@/pages/Tasks';
 import StudySync from '@/pages/StudySync';
 import PastPapers from '@/pages/PastPapers';
 import ExamDates from '@/pages/ExamDates';
-import AppSettings from '@/pages/AppSettings';
 import SubjectHub from '@/pages/SubjectHub';
 import ExamVault from '@/pages/ExamVault';
+import HelpCenter from '@/pages/HelpCenter';
 import Subscription from '@/pages/Subscription';
 
 const AuthenticatedApp = () => {
@@ -65,7 +65,7 @@ const AuthenticatedApp = () => {
         <Route path="/exam-dates" element={<ExamDates />} />
         <Route path="/subject-hub" element={<SubjectHub />} />
         <Route path="/exam-vault" element={<ExamVault />} />
-        <Route path="/settings" element={<AppSettings />} />
+        <Route path="/help" element={<HelpCenter />} />
         <Route path="/tool/studylens" element={<StudyLens />} />
         <Route path="/tool/homework" element={<Homework />} />
         <Route path="/tool/note-quiz" element={<NoteQuiz />} />

@@ -82,10 +82,6 @@ export default function Layout() {
           ))}
 
           <div className="eyebrow px-3 pt-5 pb-2">Account</div>
-          <NavLink to="/settings" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
-            <NavIcon name="Settings" className="w-4 h-4" />
-            <span>App Settings</span>
-          </NavLink>
           <NavLink to="/subscription" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
             <NavIcon name="CreditCard" className="w-4 h-4" />
             <span>Subscription</span>

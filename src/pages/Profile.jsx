@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
@@ -8,7 +8,9 @@ import { computeConceptStatus, STATUS_LABELS, statusColor, computeSubjectMastery
 import StudyPanel from "@/components/StudyPanel";
 import MasteryBar from "@/components/MasteryBar";
 import ThemePicker from "@/components/ThemePicker";
-import { Loader2, Plus, Trash2, Check, X, BookOpen, Palette, Layers, Settings } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { NOTIFICATION_PREF_DEFS, getNotificationPrefs, setNotificationPrefs } from "@/lib/appSettings";
+import { Loader2, Plus, Trash2, Check, X, BookOpen, Palette, Layers, Settings, Bell, CreditCard, LogOut } from "lucide-react";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -16,6 +18,20 @@ export default function Profile() {
   const [newSubject, setNewSubject] = useState("");
   const [newConcept, setNewConcept] = useState({}); // subjectId -> name
   const [saving, setSaving] = useState(false);
+  const [notifPrefs, setNotifPrefs] = useState(getNotificationPrefs);
+  const [savingGalaxy, setSavingGalaxy] = useState(false);
+
+  useEffect(() => { setNotificationPrefs(notifPrefs); }, [notifPrefs]);
+
+  const toggleGalaxy = async (next) => {
+    if (!profile?.id) return;
+    setSavingGalaxy(true);
+    try {
+      await base44.entities.LearnerProfile.update(profile.id, { galaxy_mode: next });
+      await reload();
+    } catch { /* ignore */ }
+    setSavingGalaxy(false);
+  };
 
   if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/" replace />;
@@ -160,20 +176,64 @@ export default function Profile() {
           <Link to="/subject-hub" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] hover:border-primary">
             <Layers className="w-4 h-4" /> Subject Hub
           </Link>
-          <Link to="/settings" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] hover:border-primary">
-            <Settings className="w-4 h-4" /> App settings
+          <Link to="/help" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] hover:border-primary">
+            <BookOpen className="w-4 h-4" /> Help Center
           </Link>
         </div>
       </StudyPanel>
 
-      {/* Background theme */}
+      {/* App settings */}
       <StudyPanel className="p-5 mb-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Palette className="w-4 h-4 text-primary" />
-          <div className="eyebrow">Background theme</div>
+        <div className="flex items-center gap-2 mb-4">
+          <Settings className="w-4 h-4 text-primary" />
+          <div className="eyebrow">App settings</div>
         </div>
-        <p className="text-[12px] text-muted-foreground mb-3">Pick a background tint for the whole app. Your choice is saved on this device.</p>
+
+        <div className="flex items-center gap-2 mb-1">
+          <Palette className="w-4 h-4 text-primary" />
+          <div className="text-[13px] font-semibold text-foreground">Display theme</div>
+        </div>
+        <p className="text-[12px] text-muted-foreground mb-3">Pick a background tint for the whole app. Saved on this device.</p>
         <ThemePicker />
+
+        <div className="mt-5 pt-4 border-t border-border">
+          <div className="flex items-center gap-2 mb-1">
+            <Bell className="w-4 h-4 text-primary" />
+            <div className="text-[13px] font-semibold text-foreground">Notification preferences</div>
+          </div>
+          <p className="text-[12px] text-muted-foreground mb-3">Saved on this device.</p>
+          <div className="space-y-3">
+            {NOTIFICATION_PREF_DEFS.map((p) => (
+              <div key={p.key} className="flex items-center justify-between gap-3 py-1.5 border-b border-border last:border-0">
+                <div className="min-w-0">
+                  <div className="text-[13px] font-semibold text-foreground">{p.label}</div>
+                  <div className="text-[11px] text-muted-foreground">{p.desc}</div>
+                </div>
+                <Switch checked={!!notifPrefs[p.key]} onCheckedChange={(v) => setNotifPrefs((s) => ({ ...s, [p.key]: v }))} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 pt-4 border-t border-border flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[13px] font-semibold text-foreground">Galaxy mode</div>
+            <div className="text-[11px] text-muted-foreground">Optimise layout for Galaxy/foldable devices.</div>
+          </div>
+          <Switch checked={!!profile.galaxy_mode} disabled={savingGalaxy} onCheckedChange={toggleGalaxy} />
+        </div>
+
+        <div className="mt-5 pt-4 border-t border-border flex flex-wrap items-center gap-2">
+          <Link to="/subscription" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] hover:border-primary">
+            <CreditCard className="w-4 h-4" /> Subscription
+          </Link>
+          <button
+            onClick={() => base44.auth.logout("/")}
+            className="inline-flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive text-[13px] font-semibold px-3 py-2 hover:bg-destructive/20"
+          >
+            <LogOut className="w-4 h-4" /> Sign out
+          </button>
+        </div>
       </StudyPanel>
 
       {/* Add subject */}
