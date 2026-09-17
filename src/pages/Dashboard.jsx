@@ -9,10 +9,11 @@ import {
 import { FEATURES } from "@/lib/features";
 import StudyPanel from "@/components/StudyPanel";
 import StatCard from "@/components/StatCard";
+import GlobalSearch from "@/components/GlobalSearch";
 import MasteryBar from "@/components/MasteryBar";
 import {
   Flame, Target, BookOpen, Brain, ArrowRight, Loader2, LogIn,
-  AlertTriangle, ChevronRight, Sparkles, Clock,
+  AlertTriangle, ChevronRight, Clock,
 } from "lucide-react";
 
 function greeting() {
@@ -21,6 +22,16 @@ function greeting() {
   if (h < 18) return "Good afternoon";
   return "Good evening";
 }
+
+// Telemetry/nav events that aren't real study activity — excluded from the
+// Recent activity feed so it shows only meaningful academic events.
+const NOISE_EVENTS = new Set([
+  "app_open",
+  "recommendation_clicked",
+  "subscription_viewed",
+  "subscription_started",
+  "subscription_cancelled",
+]);
 
 export default function Dashboard() {
   const { user, profile, subjects, concepts, events, loading, error } = useStudyOSData();
@@ -39,6 +50,11 @@ export default function Dashboard() {
   const weakConcepts = useMemo(
     () => [...concepts].sort((a, b) => (a.mastery || 0) - (b.mastery || 0)).slice(0, 4),
     [concepts]
+  );
+
+  const activityEvents = useMemo(
+    () => (events || []).filter((e) => !NOISE_EVENTS.has(e.event_name)),
+    [events]
   );
 
   if (loading) {
@@ -66,6 +82,9 @@ export default function Dashboard() {
           >
             Sign in
           </button>
+          <Link to="/register" className="mt-2 block text-center text-sm text-primary font-medium hover:underline">
+            Create an account
+          </Link>
         </StudyPanel>
       </div>
     );
@@ -107,6 +126,8 @@ export default function Dashboard() {
           <span>day streak</span>
         </div>
       </div>
+
+      <GlobalSearch concepts={concepts} subjects={subjects} boardId={profile?.board_id} />
 
       {/* Hero + priority */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4 mb-4">
@@ -225,47 +246,23 @@ export default function Dashboard() {
         </StudyPanel>
       </div>
 
-      {/* Recent activity + loop */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        <StudyPanel className="p-6">
-          <h3 className="font-bold text-foreground mb-1">Recent activity</h3>
-          <p className="text-xs text-muted-foreground mb-4">Your academic graph, updating live</p>
-          <div className="space-y-3">
-            {events.length === 0 && <p className="text-sm text-muted-foreground">No activity yet — onboarding counts.</p>}
-            {events.slice(0, 6).map((e) => (
-              <div key={e.id} className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
-                <div className="min-w-0">
-                  <div className="text-[13px] text-foreground">{e.event_name.replace(/_/g, " ")}</div>
-                  <div className="text-[10px] text-muted-foreground">{new Date(e.occurred_at).toLocaleString()}</div>
-                </div>
+      {/* Recent activity */}
+      <StudyPanel className="p-6 mb-4">
+        <h3 className="font-bold text-foreground mb-1">Recent activity</h3>
+        <p className="text-xs text-muted-foreground mb-4">Your academic graph, updating live</p>
+        <div className="space-y-3">
+          {activityEvents.length === 0 && <p className="text-sm text-muted-foreground">No activity yet.</p>}
+          {activityEvents.slice(0, 6).map((e) => (
+            <div key={e.id} className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
+              <div className="min-w-0">
+                <div className="text-[13px] text-foreground">{e.event_name.replace(/_/g, " ")}</div>
+                <div className="text-[10px] text-muted-foreground">{new Date(e.occurred_at).toLocaleString()}</div>
               </div>
-            ))}
-          </div>
-        </StudyPanel>
-
-        <StudyPanel className="p-6">
-          <h3 className="font-bold text-foreground mb-1">The StudyOS loop</h3>
-          <p className="text-xs text-muted-foreground mb-4">Every tool feeds the next one</p>
-          <div className="grid grid-cols-1 gap-2">
-            {[
-              ["1 · Capture", "Question, notes, lecture or essay"],
-              ["2 · Understand", "AI explains and structures the material"],
-              ["3 · Practice", "Quizzes reveal what's actually understood"],
-              ["4 · Diagnose", "Weakness AI finds recurring gaps"],
-              ["5 · Adapt", "ExamPilot and FocusStudy change the plan"],
-            ].map(([t, d]) => (
-              <div key={t} className="flex items-start gap-3 py-1.5 border-b border-border last:border-0">
-                <Sparkles className="w-4 h-4 text-primary mt-0.5" />
-                <div>
-                  <div className="text-[13px] font-semibold text-foreground">{t}</div>
-                  <div className="text-[11px] text-muted-foreground">{d}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </StudyPanel>
-      </div>
+            </div>
+          ))}
+        </div>
+      </StudyPanel>
 
       {/* Quick actions */}
       <div className="mt-2">
