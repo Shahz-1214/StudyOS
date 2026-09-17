@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, Link } from "react-router-dom";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
@@ -9,7 +9,7 @@ import { completeQuiz } from "@/lib/quizEngine";
 import StudyPanel from "@/components/StudyPanel";
 import QuizRunner from "@/components/practice/QuizRunner";
 import QuizResults from "@/components/practice/QuizResults";
-import { Loader2, Brain, Zap, AlertTriangle, ChevronRight } from "lucide-react";
+import { Loader2, Brain, Zap, AlertTriangle, ChevronRight, FileText } from "lucide-react";
 
 export default function Practice() {
   const { user } = useAuth();
@@ -71,8 +71,14 @@ export default function Practice() {
         <div className="eyebrow">Practice</div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mt-1">Quiz practice</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Answer a short quiz. StudyOS scores it and updates your concept mastery using the canonical formula — no fake data.
+          Answer a short quiz. StudyOS scores it and updates your concept mastery using the canonical formula.
         </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Link to="/past-papers" className="inline-flex items-center gap-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-4 py-2 hover:bg-secondary/70">
+          <FileText className="w-4 h-4" /> Past Papers
+        </Link>
       </div>
 
       {error && (
@@ -126,7 +132,7 @@ export default function Practice() {
           </div>
 
           <p className="text-[11px] text-muted-foreground px-1">
-            Questions use a built-in glossary for standard subjects (demo content). Real AI-generated questions from your notes arrive in Stage 3 (Note → Quiz).
+            Built-in glossary questions for standard subjects. For AI-generated questions from your own notes, use Note → Quiz.
           </p>
         </div>
       )}

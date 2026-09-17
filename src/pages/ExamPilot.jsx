@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { base44 } from "@/api/base44Client";
@@ -8,7 +8,7 @@ import { completeQuiz } from "@/lib/quizEngine";
 import StudyPanel from "@/components/StudyPanel";
 import QuizRunner from "@/components/practice/QuizRunner";
 import QuizResults from "@/components/practice/QuizResults";
-import { Loader2, CalendarClock, ClipboardList, Sparkles, AlertTriangle, Target, Clock, ListChecks } from "lucide-react";
+import { Loader2, CalendarClock, ClipboardList, Sparkles, AlertTriangle, Target, Clock, ListChecks, FileText } from "lucide-react";
 
 export default function ExamPilot() {
   const { user } = useAuth();
@@ -113,6 +113,15 @@ export default function ExamPilot() {
           <CalendarClock className="w-6 h-6 text-primary" /> ExamPilot
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Adaptive exams that target your weakest concepts, plus a day-by-day revision plan built around the time you actually have.</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Link to="/past-papers" className="inline-flex items-center gap-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-4 py-2 hover:bg-secondary/70">
+          <FileText className="w-4 h-4" /> Past Papers
+        </Link>
+        <Link to="/exam-dates" className="inline-flex items-center gap-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-4 py-2 hover:bg-secondary/70">
+          <CalendarClock className="w-4 h-4" /> Exam Dates
+        </Link>
       </div>
 
       {!weakConcepts.length && (

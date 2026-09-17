@@ -25,7 +25,8 @@ import LectureMind from '@/pages/LectureMind';
 import EssayCheck from '@/pages/EssayCheck';
 import Tasks from '@/pages/Tasks';
 import StudySync from '@/pages/StudySync';
-import Resources from '@/pages/Resources';
+import PastPapers from '@/pages/PastPapers';
+import ExamDates from '@/pages/ExamDates';
 import Subscription from '@/pages/Subscription';
 
 const AuthenticatedApp = () => {
@@ -57,7 +58,8 @@ const AuthenticatedApp = () => {
       <Route element={<Layout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/practice" element={<Practice />} />
-        <Route path="/resources" element={<Resources />} />
+        <Route path="/past-papers" element={<PastPapers />} />
+        <Route path="/exam-dates" element={<ExamDates />} />
         <Route path="/tool/studylens" element={<StudyLens />} />
         <Route path="/tool/homework" element={<Homework />} />
         <Route path="/tool/note-quiz" element={<NoteQuiz />} />

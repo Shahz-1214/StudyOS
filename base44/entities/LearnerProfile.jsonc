@@ -40,6 +40,14 @@
     "galaxy_mode": {
       "type": "boolean",
       "default": false
+    },
+    "country": {
+      "type": "string",
+      "default": ""
+    },
+    "board_id": {
+      "type": "string",
+      "default": ""
     }
   },
   "required": [],

@@ -1,27 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { track, EVENTS } from "@/lib/analytics";
 import { SUBJECT_PRESETS, EDUCATION_LEVELS, GOAL_PRESETS, STUDY_TIME_OPTIONS } from "@/lib/subjectPresets";
 import StudyPanel from "@/components/StudyPanel";
-import { Loader2, Check, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import { Loader2, Check, ArrowRight, ArrowLeft, Sparkles, Globe } from "lucide-react";
 
-const STEPS = ["Education", "Subjects", "Goal", "Study time"];
+// Onboarding flow: Country → Board → Education → Subjects → Goal → Study time.
+// Country and Board are distinct steps. Boards come from the StudyOS board
+// registry (no invented boards). Re-entering onboarding updates an existing
+// profile and only creates subjects that aren't already present.
+const STEPS = ["Country", "Board", "Education", "Subjects", "Goal", "Study time"];
 
 export default function Onboarding() {
   const { user } = useAuth();
+  const { profile, subjects, loading, reload } = useStudyOSData();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
+  const [boards, setBoards] = useState([]);
+  const [boardsLoaded, setBoardsLoaded] = useState(false);
 
+  const [country, setCountry] = useState("");
+  const [boardId, setBoardId] = useState("");
   const [education, setEducation] = useState("high_school");
   const [selectedSubjects, setSelectedSubjects] = useState(["Mathematics", "Physics"]);
   const [goal, setGoal] = useState(GOAL_PRESETS[0]);
   const [studyTime, setStudyTime] = useState(60);
 
+  useEffect(() => {
+    if (!user) return;
+    base44.entities.Board.list("-board", 200)
+      .then((b) => { setBoards(b.filter((x) => x.active)); })
+      .catch(() => {})
+      .finally(() => setBoardsLoaded(true));
+  }, [user]);
+
+  const countries = useMemo(() => [...new Set(boards.map((b) => b.country))].sort(), [boards]);
+  const countryBoards = useMemo(() => boards.filter((b) => b.country === country), [boards, country]);
+  const selectedBoard = useMemo(() => boards.find((b) => b.board_id === boardId), [boards, boardId]);
+
+  if (loading || !boardsLoaded) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/" replace />;
+  // Already-onboarded users are not forced through again.
+  if (profile && profile.onboarding_completed) return <Navigate to="/" replace />;
 
   const toggleSubject = (name) => {
     setSelectedSubjects((prev) =>
@@ -33,20 +58,33 @@ export default function Onboarding() {
     setSaving(true);
     setErr(null);
     try {
-      // 1. Create the learner profile (one per user)
-      const profile = await base44.entities.LearnerProfile.create({
+      const payload = {
         display_name: user?.full_name || "",
         education_level: education,
         main_goal: goal,
         daily_study_minutes: studyTime,
-        streak: 0,
         onboarding_completed: true,
-        galaxy_mode: false,
-      });
+        country: country || "",
+        board_id: boardId || "",
+      };
 
-      // 2. Create subjects + seed concepts for each selected preset
-      let order = 0;
+      let profileId = profile?.id;
+      if (profileId) {
+        await base44.entities.LearnerProfile.update(profileId, payload);
+      } else {
+        const created = await base44.entities.LearnerProfile.create({
+          ...payload,
+          streak: 0,
+          galaxy_mode: false,
+        });
+        profileId = created.id;
+      }
+
+      // Only create subjects that aren't already present (no duplicates).
+      const existingNames = new Set((subjects || []).map((s) => s.name));
+      let order = (subjects || []).length;
       for (const name of selectedSubjects) {
+        if (existingNames.has(name)) continue;
         const preset = SUBJECT_PRESETS.find((p) => p.name === name);
         const subject = await base44.entities.Subject.create({
           name,
@@ -61,7 +99,7 @@ export default function Onboarding() {
               subject_id: subject.id,
               name: cn,
               description: "",
-              importance: Math.round((1 - i / conceptNames.length) * 100) / 100, // earlier = more important
+              importance: Math.round((1 - i / conceptNames.length) * 100) / 100,
               mastery: 0,
               status: "developing",
             }))
@@ -74,9 +112,11 @@ export default function Onboarding() {
         subjects: selectedSubjects,
         goal,
         daily_study_minutes: studyTime,
-        profile_id: profile.id,
+        profile_id: profileId,
+        country,
+        board_id: boardId,
       });
-
+      await reload();
       navigate("/");
     } catch (e) {
       setErr(e?.message || "Could not save your profile. Please try again.");
@@ -84,7 +124,11 @@ export default function Onboarding() {
     }
   };
 
-  const canNext = step === 1 ? selectedSubjects.length > 0 : true;
+  const canNext =
+    step === 0 ? !!country :
+    step === 1 ? !!boardId :
+    step === 3 ? selectedSubjects.length > 0 :
+    true;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
@@ -110,6 +154,60 @@ export default function Onboarding() {
         <StudyPanel className="p-6">
           {step === 0 && (
             <div>
+              <h2 className="text-lg font-bold text-foreground">Where are you studying?</h2>
+              <p className="text-sm text-muted-foreground mt-1 mb-4">Pick your country or system. This sets which boards are available next.</p>
+              <div className="grid grid-cols-1 gap-2">
+                {countries.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => { setCountry(c); setBoardId(""); }}
+                    className={`flex items-center justify-between rounded-lg border px-4 py-3 text-sm transition-colors ${
+                      country === c ? "border-primary bg-primary/5 text-foreground" : "border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2"><Globe className="w-4 h-4" /> {c}</span>
+                    {country === c && <Check className="w-4 h-4 text-primary" />}
+                  </button>
+                ))}
+                {countries.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No boards available right now. You can continue without a board.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Select your board</h2>
+              <p className="text-sm text-muted-foreground mt-1 mb-4">Boards available for {country}. This matches your syllabus, past papers and exam dates.</p>
+              <div className="grid grid-cols-1 gap-2">
+                {countryBoards.map((b) => (
+                  <button
+                    key={b.board_id}
+                    onClick={() => setBoardId(b.board_id)}
+                    className={`flex items-start justify-between rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                      boardId === b.board_id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <div>
+                      <div className="font-semibold text-foreground">{b.board}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">{b.education_system} · {b.qualification} · {b.level}</div>
+                    </div>
+                    {boardId === b.board_id && <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
+                  </button>
+                ))}
+                {countryBoards.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No boards for this country yet. Go back and pick another, or continue.</p>
+                )}
+              </div>
+              {selectedBoard?.requires_subboard && (
+                <p className="text-[11px] text-amber-700 mt-3">{selectedBoard.qualification} is a qualification level — you'll pick your exact sub-board, subject and year on the official page when using resources.</p>
+              )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div>
               <h2 className="text-lg font-bold text-foreground">What's your education level?</h2>
               <p className="text-sm text-muted-foreground mt-1 mb-4">This tunes how StudyOS explains concepts.</p>
               <div className="grid grid-cols-1 gap-2">
@@ -129,7 +227,7 @@ export default function Onboarding() {
             </div>
           )}
 
-          {step === 1 && (
+          {step === 3 && (
             <div>
               <h2 className="text-lg font-bold text-foreground">What are you studying?</h2>
               <p className="text-sm text-muted-foreground mt-1 mb-4">Pick the subjects you want to track. We'll seed starter concepts for each.</p>
@@ -155,7 +253,7 @@ export default function Onboarding() {
             </div>
           )}
 
-          {step === 2 && (
+          {step === 4 && (
             <div>
               <h2 className="text-lg font-bold text-foreground">What's your main goal?</h2>
               <p className="text-sm text-muted-foreground mt-1 mb-4">StudyOS will orient your plan around this.</p>
@@ -176,10 +274,10 @@ export default function Onboarding() {
             </div>
           )}
 
-          {step === 3 && (
+          {step === 5 && (
             <div>
               <h2 className="text-lg font-bold text-foreground">How much can you study daily?</h2>
-              <p className="text-sm text-muted-foreground mt-1 mb-4">ExamPilot will respect this limit (Stage 4).</p>
+              <p className="text-sm text-muted-foreground mt-1 mb-4">ExamPilot will respect this limit.</p>
               <div className="grid grid-cols-3 gap-2">
                 {STUDY_TIME_OPTIONS.map((t) => (
                   <button

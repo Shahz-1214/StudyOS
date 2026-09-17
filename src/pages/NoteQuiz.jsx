@@ -8,6 +8,7 @@ import { completeQuiz } from "@/lib/quizEngine";
 import StudyPanel from "@/components/StudyPanel";
 import QuizRunner from "@/components/practice/QuizRunner";
 import QuizResults from "@/components/practice/QuizResults";
+import VerifiedNotes from "@/components/resources/VerifiedNotes";
 import { Loader2, FileText, Sparkles, AlertTriangle, ArrowRight } from "lucide-react";
 
 export default function NoteQuiz() {
@@ -98,6 +99,10 @@ export default function NoteQuiz() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Turn your notes into AI-generated practice questions, then let StudyOS learn what you keep missing.</p>
       </div>
+
+      {mode === "input" && (
+        <VerifiedNotes boardId={profile?.board_id} />
+      )}
 
       {mode === "input" && (
         <StudyPanel className="p-6">
