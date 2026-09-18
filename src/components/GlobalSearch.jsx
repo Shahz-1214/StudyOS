@@ -66,7 +66,7 @@ export default function GlobalSearch({ concepts, subjects, boardId }) {
               {results.concepts.map((c) => (
                 <button
                   key={c.id}
-                  onMouseDown={() => { navigate("/practice"); setOpen(false); }}
+                  onClick={() => { navigate("/practice"); setOpen(false); }}
                   className="w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-secondary/60"
                 >
                   <Brain className="w-4 h-4 text-primary shrink-0" />
@@ -87,7 +87,7 @@ export default function GlobalSearch({ concepts, subjects, boardId }) {
                   href={n.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onMouseDown={() => setOpen(false)}
+                  onClick={() => setOpen(false)}
                   className="w-full flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-secondary/60"
                 >
                   <FileText className="w-4 h-4 text-primary shrink-0" />

@@ -9,7 +9,7 @@ import StudyPanel from "@/components/StudyPanel";
 import QuizRunner from "@/components/practice/QuizRunner";
 import QuizResults from "@/components/practice/QuizResults";
 import VerifiedNotes from "@/components/resources/VerifiedNotes";
-import { Loader2, FileText, Sparkles, AlertTriangle, ArrowRight } from "lucide-react";
+import { Loader2, FileText, Sparkles, AlertTriangle } from "lucide-react";
 
 export default function NoteQuiz() {
   const { user } = useAuth();
@@ -24,6 +24,7 @@ export default function NoteQuiz() {
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState(null);
   const [updates, setUpdates] = useState([]);
+  const [saveError, setSaveError] = useState(false);
 
   if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/" replace />;
@@ -73,6 +74,7 @@ export default function NoteQuiz() {
   }
 
   async function finish(finalAnswers) {
+    setSaveError(false);
     try {
       const { updates: ups } = await completeQuiz(quiz, finalAnswers, concepts);
       await reload();
@@ -82,12 +84,13 @@ export default function NoteQuiz() {
       console.error(e);
       setAnswers(finalAnswers);
       setUpdates([]);
+      setSaveError(true);
     }
     setMode("results");
   }
 
   function reset() {
-    setQuiz(null); setAnswers(null); setUpdates([]); setMode("input"); setNotes("");
+    setQuiz(null); setAnswers(null); setUpdates([]); setSaveError(false); setMode("input"); setNotes("");
   }
 
   return (
@@ -148,6 +151,7 @@ export default function NoteQuiz() {
           subjects={subjects}
           onAgain={reset}
           onDone={() => navigate("/")}
+          saveError={saveError}
         />
       )}
 

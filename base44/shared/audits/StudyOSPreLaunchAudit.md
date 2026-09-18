@@ -418,8 +418,18 @@ Sources accessed or located during this audit, not endorsements or automatic app
 
 ## 14. Change ledger for this checkpoint
 
+**2026-09-18 remediation checkpoint (unblocked technical fixes only):** on the builder's instruction to follow through, the following verified defects were fixed in place, with no schema, RLS, entitlement, analytics-policy, operator-disclosure, or deployment changes:
+
+- FLOW-01: quiz attempt save failures in Practice, Note → Quiz and ExamPilot now surface a truthful `saveError` warning on the results screen ("This attempt wasn't saved and your mastery wasn't updated…") instead of rendering silent success; state resets on retry. **PASS (source + lint + build; runtime flow NEEDS VERIFICATION via Testing Agent).**
+- FLOW-04: Exam Vault note blur no longer clears an existing note when no draft was typed for that row; drafts clear from memory only after a successful save. **PASS (source; runtime NEEDS VERIFICATION).**
+- EVENT-01 (partial): StudySync page no longer persists a duplicate `studysync_run` Event record (backend remains the single Event producer); client forwards analytics only, best-effort. App-open collection noise and pre-success AI-completion events remain open. **PASS (source; duplicate-record behavior NEEDS VERIFICATION).**
+- FLOW-06 (partial): GlobalSearch concept and note result activation now uses click (keyboard Enter works); keyboard/blur behavior and remaining search findings stay open. **PASS (source; runtime NEEDS VERIFICATION).**
+- Baseline lint failures fixed (unused imports in NoteQuiz and Profile). `npm run lint` **PASS**; `npm run build` **PASS (BUILD_EXIT=0)**. `npm run typecheck` remains **FAIL** for pre-existing JS/shadcn prop-inference and SDK type-declaration errors — intentionally not refactored here per change discipline.
+
+Still blocked pending operator decisions: SEC-01 private uploads, SEC-02/SEC-03 server-side entitlement/subscription enforcement, PRIV-01 analytics consent, LEGAL-01/02 policies and child safeguards, PRIV-02 retention/deletion, PRODUCT-01 paid-plan claims, and all deployment. No app was published.
+
 Added: this internal audit/report/configuration-blocker document only.
-Modified: no existing app files, schemas, runtime settings or records.
+Modified: src/components/practice/QuizResults.jsx, src/pages/Practice.jsx, src/pages/NoteQuiz.jsx, src/pages/ExamPilot.jsx, src/pages/ExamVault.jsx, src/pages/StudySync.jsx, src/components/GlobalSearch.jsx, src/pages/Profile.jsx (above fixes only).
 Removed: nothing.
 Preserved: all existing routes, functionality, auth, RLS, deterministic learner engine, Core server-side boundary, subjects/concepts/resources, styling, preferences and integrations.
 Deferred explicitly: every application remediation, public policy publication, consent implementation/decision, business disclosures, final SEO configuration, and complete live regression. This is not a final completion report and must not be presented to end users as evidence of compliance.

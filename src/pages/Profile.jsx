@@ -10,7 +10,7 @@ import MasteryBar from "@/components/MasteryBar";
 import ThemePicker from "@/components/ThemePicker";
 import { Switch } from "@/components/ui/switch";
 import { NOTIFICATION_PREF_DEFS, getNotificationPrefs, setNotificationPrefs } from "@/lib/appSettings";
-import { Loader2, Plus, Trash2, Check, X, BookOpen, Palette, Layers, Settings, Bell, CreditCard, LogOut } from "lucide-react";
+import { Loader2, Plus, Trash2, X, BookOpen, Palette, Layers, Settings, Bell, CreditCard, LogOut } from "lucide-react";
 
 export default function Profile() {
   const { user } = useAuth();

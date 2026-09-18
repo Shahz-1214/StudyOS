@@ -1,10 +1,10 @@
-import { ArrowRight, RotateCcw, Check, X, TrendingUp } from "lucide-react";
+import { ArrowRight, RotateCcw, Check, X, TrendingUp, AlertTriangle } from "lucide-react";
 import StudyPanel from "@/components/StudyPanel";
 import MasteryBar from "@/components/MasteryBar";
 import { STATUS_LABELS, statusColor, computeConceptStatus } from "@/lib/learnerState";
 
 // Results screen: score ring, per-concept mastery deltas, review of answers.
-export default function QuizResults({ quiz, answers, updates, concepts, subjects, onAgain, onDone }) {
+export default function QuizResults({ quiz, answers, updates, concepts, subjects, onAgain, onDone, saveError }) {
   const correct = answers.filter((a, i) => a && a.selected_index === quiz.questions[i].correct_index).length;
   const total = quiz.questions.length;
   const accuracy = total ? Math.round((correct / total) * 100) : 0;
@@ -41,6 +41,13 @@ export default function QuizResults({ quiz, answers, updates, concepts, subjects
           </button>
         </div>
       </StudyPanel>
+
+      {saveError && (
+        <div role="alert" className="rounded-lg bg-destructive/10 text-destructive text-[13px] px-4 py-3 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          This attempt wasn't saved and your mastery wasn't updated. Check your connection and try again.
+        </div>
+      )}
 
       {/* Mastery deltas */}
       {updates.length > 0 && (

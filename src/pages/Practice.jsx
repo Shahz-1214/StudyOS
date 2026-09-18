@@ -21,6 +21,7 @@ export default function Practice() {
   const [answers, setAnswers] = useState(null);
   const [updates, setUpdates] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   const weakConcepts = useMemo(
     () => [...concepts].sort((a, b) => (a.mastery || 0) - (b.mastery || 0)).slice(0, 5),
@@ -48,6 +49,7 @@ export default function Practice() {
   }
 
   async function finishQuiz(finalAnswers) {
+    setSaveError(false);
     try {
       const { updates: masteryUpdates } = await completeQuiz(quiz, finalAnswers, concepts);
       await reload();
@@ -57,12 +59,13 @@ export default function Practice() {
       console.error(e);
       setAnswers(finalAnswers);
       setUpdates([]);
+      setSaveError(true);
     }
     setMode("results");
   }
 
   function reset() {
-    setQuiz(null); setAnswers(null); setUpdates([]); setMode("select");
+    setQuiz(null); setAnswers(null); setUpdates([]); setSaveError(false); setMode("select");
   }
 
   return (
@@ -150,6 +153,7 @@ export default function Practice() {
           subjects={subjects}
           onAgain={reset}
           onDone={() => navigate("/")}
+          saveError={saveError}
         />
       )}
     </div>

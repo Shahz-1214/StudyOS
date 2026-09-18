@@ -3,7 +3,7 @@ import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { base44 } from "@/api/base44Client";
-import { track, EVENTS } from "@/lib/analytics";
+import { EVENTS } from "@/lib/analytics";
 import StudyPanel from "@/components/StudyPanel";
 import { Loader2, RefreshCw, AlertTriangle, CheckCircle2, ArrowRight, Zap, FileText, Headphones } from "lucide-react";
 
@@ -23,7 +23,11 @@ export default function StudySync() {
     try {
       const res = await base44.functions.invoke("studySync", {});
       setResult(res.data);
-      track(EVENTS.STUDYSYNC_RUN, { created: res.data?.created || 0 });
+      // The backend function already persists the studysync_run Event record —
+      // only forward analytics here to avoid a duplicate Event row.
+      try {
+        base44.analytics.track({ eventName: EVENTS.STUDYSYNC_RUN, properties: { created: res.data?.created || 0 } });
+      } catch { /* analytics is best-effort */ }
     } catch (err) {
       setError("Sync failed — try again.");
     }

@@ -39,10 +39,13 @@ export default function ExamVault() {
     } catch { /* ignore */ }
   }
   async function saveNote(id) {
-    const v = noteDraft[id] ?? "";
+    // Blur without editing (no draft for this row) must not clear the stored note.
+    if (!(id in noteDraft)) return;
+    const v = noteDraft[id];
     try {
       await base44.entities.SavedPaper.update(id, { note: v });
       setSaved((s) => s.map((p) => p.id === id ? { ...p, note: v } : p));
+      setNoteDraft((d) => { const n = { ...d }; delete n[id]; return n; });
     } catch { /* ignore */ }
   }
 

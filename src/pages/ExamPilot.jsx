@@ -23,6 +23,7 @@ export default function ExamPilot() {
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState(null);
   const [updates, setUpdates] = useState([]);
+  const [saveError, setSaveError] = useState(false);
 
   const [days, setDays] = useState(7);
   const [plan, setPlan] = useState(null);
@@ -73,11 +74,12 @@ export default function ExamPilot() {
   }
 
   async function finish(finalAnswers) {
+    setSaveError(false);
     try {
       const { updates: ups } = await completeQuiz(quiz, finalAnswers, concepts);
       await reload();
       setAnswers(finalAnswers); setUpdates(ups);
-    } catch (e) { console.error(e); setAnswers(finalAnswers); setUpdates([]); }
+    } catch (e) { console.error(e); setAnswers(finalAnswers); setUpdates([]); setSaveError(true); }
     setMode("results");
   }
 
@@ -169,8 +171,8 @@ export default function ExamPilot() {
       {tab === "exam" && mode === "quiz" && quiz && <QuizRunner quiz={quiz} onComplete={finish} />}
 
       {tab === "exam" && mode === "results" && quiz && answers && (
-        <QuizResults quiz={quiz} answers={answers} updates={updates} concepts={concepts} subjects={subjects}
-          onAgain={() => { setMode("setup"); setQuiz(null); setAnswers(null); setUpdates([]); }}
+        <QuizResults quiz={quiz} answers={answers} updates={updates} concepts={concepts} subjects={subjects} saveError={saveError}
+          onAgain={() => { setMode("setup"); setQuiz(null); setAnswers(null); setUpdates([]); setSaveError(false); }}
           onDone={() => navigate("/")} />
       )}
 
