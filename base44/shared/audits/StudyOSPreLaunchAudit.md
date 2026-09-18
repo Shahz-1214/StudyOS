@@ -34,6 +34,8 @@ Public policies must reflect actual practices after remediation, including any r
 
 Outstanding factual inputs: the operator's exact public/legal name, country/province of establishment, and a verified public privacy/support contact. Outstanding operational decisions: precise eligibility wording, child/guardian or school account handling, retention/deletion procedure and the existing security/tracking remediation plan. None is filled with invented information. No application changes, record changes, publication or backend deployment accompany this clarification.
 
+**2026-09-18 — builder directive (binding for all subsequent work):** the operator's public name, country of operation and designated privacy/support contact are explicitly **not yet provided**. These disclosures remain **BLOCKED from publication** until the builder verifies and supplies them; no policy, footer, contact UI or metadata may state or imply an operator identity, establishment country or support channel. The audience intent (roughly age 7+) stands, and child/guardian safeguards must be **verified before launch**. **No access rules (RLS, roles, app visibility) or deployment changes are authorized** by this directive; treat any such change as requiring explicit instruction.
+
 ## 1. Inventory: what is actually present
 
 ### Active routes
