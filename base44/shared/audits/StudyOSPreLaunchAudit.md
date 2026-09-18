@@ -20,6 +20,20 @@ Visibility: builder/developer documentation only. This file is outside the front
 
 The request spans legal, security, billing, accessibility and product behavior. Several decisions cannot safely be inferred: verified operator/contact details, intended markets and ages, retention/deletion handling, paid product design, and consent treatment of platform-owned tracking. The user expressly requires stopping before risky assumptions about authentication, security, billing or existing records, and prohibits deployment without explicit instruction. Backend saves deploy immediately on this platform. Therefore this checkpoint records the existing state before application changes; it does not silently introduce policy promises, disable core functionality, mutate records, or deploy security/billing changes.
 
+## Confirmed operator and audience intent — 2026-09-18
+
+The builder has now confirmed:
+
+- **Operator type: individual operator.** Exact public/legal operator name, establishment location and verified privacy/support contact remain unprovided; no identifying details are inferred from the builder account.
+- **Intended markets: worldwide (“Everywhere”).** This is product intent, not evidence of worldwide legal compliance, provider suitability, geographic availability or authorization to launch in every country. Prior market-confirmation questions are answered; do not repeat them.
+- **Intended audience: roughly age seven and up (“Almost all above 7”).** Children under 13, teenagers and adults are therefore in scope. The phrase is not a precise eligibility cutoff, and no automatic minimum-age restriction has been introduced.
+
+**PASS — audience intent recorded. NEEDS VERIFICATION — eligibility implementation, child-safety/privacy obligations and launch readiness.** The existing public-upload, tracking, retention and entitlement findings remain open and are especially material for a service intentionally used by children. A generic consent checkbox, self-declared age or adult Terms acceptance is not evidence of a sufficient parental/school authorization system.
+
+Public policies must reflect actual practices after remediation, including any required age-appropriate notices, guardian involvement, rights handling and processor restrictions. No parental account system, age-assurance mechanism or school-managed account model exists merely because this audience is declared. Choosing and implementing one requires a separately agreed design and jurisdiction/provider review; do not silently narrow the audience to adults or assume worldwide suitability.
+
+Outstanding factual inputs: the operator's exact public/legal name, country/province of establishment, and a verified public privacy/support contact. Outstanding operational decisions: precise eligibility wording, child/guardian or school account handling, retention/deletion procedure and the existing security/tracking remediation plan. None is filled with invented information. No application changes, record changes, publication or backend deployment accompany this clarification.
+
 ## 1. Inventory: what is actually present
 
 ### Active routes
@@ -97,7 +111,7 @@ Required: classify purposes, separate necessary app activity/usage accounting fr
 No canonical privacy/terms/cookie pages or signup/footer policy links. No verified legal operator, deliberately public business address, privacy-request channel, complaint route, governing-law decision or support procedure available in code. Do not substitute Base44's corporate details for StudyOS's operator. Create policy/contact UI only around confirmed data; keep missing configuration internal. No fake contact or unsupported request workflow was added.
 
 **LEGAL-02 — NEEDS VERIFICATION: minors and intended jurisdictions.**
-Secondary/high-school and SSC/HSSC/GCSE/ICSE-related offerings make minors reasonably foreseeable. Signup has no age decision, parental workflow or differentiated privacy treatment. No arbitrary minimum age was imposed. Confirm audience and platform/provider suitability, then obtain qualified review of relevant age, consent, notice, safety and record-retention obligations before accepting children. See legal research below.
+The builder has explicitly confirmed worldwide targeting and an audience roughly age seven and up, so under-13 children and teenagers are intended users, not merely foreseeable visitors. Signup has no age decision, parental workflow or differentiated privacy treatment. No arbitrary minimum age was imposed. Confirm the precise eligibility/account-handling design and platform/provider suitability, then obtain qualified review of relevant age, consent, notice, safety and record-retention obligations before accepting children. See the confirmed-intent section and legal research below.
 
 **PRIV-02 — FAIL: full retention/deletion promises cannot currently be delivered.**
 Only isolated task/subject/concept/bookmark deletion exists. No full account-data export/deletion request flow, upload erasure, cascade cleanup, scheduled purge or disclosed backup-retention process was found. No evidence that deleting an account deletes every associated record/file/log/provider copy. Do not claim deletion on request until a real operator channel and tested procedure exist. Retention durations must be approved by the operator, not invented.
@@ -247,7 +261,7 @@ No stock-photo gallery, promotional video, fabricated review imagery or external
 
 ## 7. Jurisdiction and minors research (not legal advice)
 
-Review date is 2026-09-18; source publication dates may be earlier. No production URL exists. PK regional context and Pakistan curriculum offerings make Pakistan relevant for investigation, but do not establish the business's registered location. UK/International and India registry content warrant audience confirmation, not automatic global-law assumptions.
+Review date is 2026-09-18; source publication dates may be earlier. No production URL exists. The builder has now confirmed worldwide targeting and an audience roughly age seven and up. PK regional context and Pakistan curriculum offerings do not establish the individual's legal establishment location. The research below is an initial jurisdiction sample, not an exhaustive worldwide review; applicable duties and launch permissions remain country-specific.
 
 ### Pakistan
 
@@ -269,12 +283,12 @@ Review date is 2026-09-18; source publication dates may be earlier. No productio
 
 ### Missing operator decisions (internal launch configuration)
 
-All are **NEEDS VERIFICATION**, not public placeholders:
+Confirmed intent is distinguished from outstanding operational verification below; unresolved items are internal blockers, not public placeholders:
 
-1. Exact operator/legal name and whether individual, registered entity or school/operator arrangement.
-2. Verified public privacy/support/complaint channel and person responsible for handling requests; deliberately public business address only if legally required/approved.
-3. Operator country and province/state; intended target markets; consumer versus school model.
-4. Intended age bands, whether under-13s/teenagers are allowed, parental/school authorization model and safety escalation procedure.
+1. **CONFIRMED:** individual operator. **NEEDS VERIFICATION:** exact public/legal operator name.
+2. **NEEDS VERIFICATION:** verified public privacy/support/complaint channel and person responsible for handling requests; deliberately public business address only if legally required/approved.
+3. **CONFIRMED:** worldwide target markets. **NEEDS VERIFICATION:** operator country and province/state, country-specific launch obligations, and consumer versus school account model.
+4. **CONFIRMED:** audience roughly age seven and up, including under-13s and teenagers. **NEEDS VERIFICATION:** precise eligibility boundary, appropriate child/guardian or school authorization design, safety escalation and provider suitability.
 5. Actual free/paid model, verified prices/benefits, authorized payment/native deployment plan.
 6. Purpose/legal basis by data category, minimum fields and retention schedule; operational full-account/file deletion/export process, backups/log exceptions.
 7. Processor agreements, subprocessors, data regions, AI retention/training settings and transfer mechanism.
@@ -352,7 +366,7 @@ No deletion was undertaken merely on an unused-import scan.
 
 ## 12. Remediation order and acceptance criteria
 
-1. Confirm operator/contact, target markets/ages, product model, deployment authorization and request/deletion operations. Keep launch blocked; do not publish placeholder policies as if final.
+1. Use the confirmed individual-operator, worldwide and roughly-seven-plus audience intent; do not repeat those questions. Obtain exact public/legal operator identity, establishment location and verified contact; settle child-account safeguards, product model, deployment authorization and request/deletion operations. Keep launch blocked; do not publish placeholder policies as if final.
 2. Coordinate private upload + authorized temporary access and server-enforced entitlement/usage accounting within existing functions. Preserve RLS/auth; handle legacy public media with explicit approval. Test owner/non-owner/admin and duplicate/failed request paths before claiming remediation.
 3. Separate optional analytics from required app activity and correct the duplicate StudySync producer; configure platform surfaces too. Either disable non-essential collection or implement one suitable manager only after the legal/technical decision. Verify top-level behavior before/after choice and withdrawal.
 4. Apply narrow in-place UI repairs: labels/keyboard/search, note-blur preservation, submission/error/completion truthfulness, token-level contrast, source/AI/plan claims, upload notices, 404/manifest/favicon. Preserve existing routes/business behavior except where a verified defect needs correction.
