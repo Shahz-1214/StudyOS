@@ -107,15 +107,7 @@ export default function Onboarding() {
         }
       }
 
-      await track(EVENTS.ONBOARDING_COMPLETED, {
-        education_level: education,
-        subjects: selectedSubjects,
-        goal,
-        daily_study_minutes: studyTime,
-        profile_id: profileId,
-        country,
-        board_id: boardId,
-      });
+      await track(EVENTS.ONBOARDING_COMPLETED, {});
       await reload();
       navigate("/");
     } catch (e) {

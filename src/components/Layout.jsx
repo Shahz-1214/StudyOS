@@ -1,8 +1,7 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { STUDY_FEATURES, PLAN_FEATURES } from "@/lib/features";
-import { track, EVENTS } from "@/lib/analytics";
-import { useEffect } from "react";
+import AppFooter from "@/components/AppFooter";
 import {
   Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine,
   CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain, AlertCircle, CreditCard, Settings, Layers, Archive,
@@ -29,11 +28,6 @@ export default function Layout() {
   const { user } = useAuth();
   const location = useLocation();
   const initials = (user?.full_name || user?.email || "S").trim().charAt(0).toUpperCase();
-
-  useEffect(() => {
-    track(EVENTS.APP_OPEN, { path: location.pathname });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -104,6 +98,7 @@ export default function Layout() {
         <main className="flex-1 min-w-0 pb-20 md:pb-0">
           <Outlet />
         </main>
+        <AppFooter />
       </div>
 
       {/* Mobile bottom nav */}

@@ -35,11 +35,17 @@ import SubjectHub from '@/pages/SubjectHub';
 import ExamVault from '@/pages/ExamVault';
 import HelpCenter from '@/pages/HelpCenter';
 import Subscription from '@/pages/Subscription';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import TermsConditions from '@/pages/TermsConditions';
+import CookiePolicy from '@/pages/CookiePolicy';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
-  const isAuthRoute = ["/login", "/register", "/forgot-password", "/reset-password"].includes(location.pathname);
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/privacy", "/terms", "/cookies"];
+  const isPublicRoute = publicRoutes.includes(location.pathname);
+  const protectedPrefixes = ["/tool/", "/practice", "/past-papers", "/exam-dates", "/subject-hub", "/exam-vault", "/help", "/subscription", "/onboarding", "/progress", "/profile"];
+  const isProtectedRoute = location.pathname === "/" || protectedPrefixes.some((prefix) => location.pathname.startsWith(prefix));
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -52,7 +58,7 @@ const AuthenticatedApp = () => {
 
   // Handle authentication errors — but never block the dedicated auth pages
   // (login / register / forgot / reset) so unauthenticated users can reach them.
-  if (authError && !isAuthRoute) {
+  if (authError && !isPublicRoute && isProtectedRoute) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
@@ -69,6 +75,9 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsConditions />} />
+      <Route path="/cookies" element={<CookiePolicy />} />
       <Route element={<Layout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/practice" element={<Practice />} />

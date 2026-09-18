@@ -1,8 +1,7 @@
 import { base44 } from "@/api/base44Client";
 
-// Centralized event system. Fires platform analytics AND persists an Event
-// record so charts can later be derived from immutable events (per architecture).
-// One place to track — never scatter analytics calls across components.
+// Centralized operational event system. Persists the learning events used by
+// StudyOS features; non-essential platform analytics is disabled separately.
 
 export const EVENTS = {
   APP_OPEN: "app_open",
@@ -32,11 +31,6 @@ export const EVENTS = {
 };
 
 export async function track(eventName, properties = {}) {
-  try {
-    base44.analytics.track({ eventName, properties });
-  } catch {
-    /* analytics is best-effort */
-  }
   try {
     await base44.entities.Event.create({
       event_name: eventName,

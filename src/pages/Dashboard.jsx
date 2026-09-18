@@ -145,7 +145,7 @@ export default function Dashboard() {
               </p>
               <div className="flex flex-wrap gap-2 mt-5">
                 <button
-                  onClick={() => { track(EVENTS.RECOMMENDATION_CLICKED, { concept: recommendation.name }); navigate("/practice"); }}
+                  onClick={() => { track(EVENTS.RECOMMENDATION_CLICKED, {}); navigate("/practice"); }}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 hover:opacity-90"
                 >
                   Start session <ArrowRight className="w-4 h-4" />

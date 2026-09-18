@@ -1,4 +1,5 @@
 import React from "react";
+import AppFooter from "@/components/AppFooter";
 
 export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
   return (
@@ -17,6 +18,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
         {footer && (
           <p className="text-center text-sm text-muted-foreground mt-6">{footer}</p>
         )}
+        <AppFooter compact />
       </div>
     </div>
   );
