@@ -1,38 +1,119 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
+import { UserPlus, Mail, Lock, Loader2, ShieldCheck, CalendarDays, Github, CheckCircle2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
+import AuthUnavailable from "@/components/AuthUnavailable";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
+
+const MINIMUM_AGE = 13;
+const OTP_UI_TTL_MS = 10 * 60 * 1000;
+
+function calculateAge(dateValue) {
+  if (!dateValue) return 0;
+  const birth = new Date(`${dateValue}T00:00:00`);
+  if (Number.isNaN(birth.getTime())) return 0;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDelta = today.getMonth() - birth.getMonth();
+  if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < birth.getDate())) age -= 1;
+  return age;
+}
+
+function passwordChecks(password) {
+  return {
+    length: password.length >= 12,
+    lower: /[a-z]/.test(password),
+    upper: /[A-Z]/.test(password),
+    number: /[0-9]/.test(password),
+    symbol: /[^A-Za-z0-9]/.test(password),
+  };
+}
 
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [ageError, setAgeError] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [offline, setOffline] = useState(() => typeof navigator !== "undefined" && !navigator.onLine);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [otpStartedAt, setOtpStartedAt] = useState(0);
+  const [otpRemaining, setOtpRemaining] = useState(0);
+  const [resendBusy, setResendBusy] = useState(false);
+
+  const checks = useMemo(() => passwordChecks(password), [password]);
+  const passwordScore = Object.values(checks).filter(Boolean).length;
+  const age = calculateAge(dateOfBirth);
+  const returnTo = safeReturnTo();
+
+  useEffect(() => {
+    const goOffline = () => setOffline(true);
+    const goOnline = () => setOffline(false);
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    return () => {
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!otpStartedAt) return undefined;
+    const timer = window.setInterval(() => {
+      const remaining = Math.max(0, OTP_UI_TTL_MS - Date.now() + otpStartedAt);
+      setOtpRemaining(remaining);
+      if (remaining === 0) {
+        setOtpCode("");
+      }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [otpStartedAt]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    setAgeError("");
+
+    if (!dateOfBirth || age < MINIMUM_AGE) {
+      setAgeError(`StudyOS accounts currently require an age of ${MINIMUM_AGE} or older.`);
       return;
     }
+    if (!termsAccepted) {
+      setError("Please accept the Terms & Conditions and Privacy Policy to create an account.");
+      return;
+    }
+    if (passwordScore < 4) {
+      setError("Use a password with at least 12 characters plus uppercase, lowercase, a number, and a symbol.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (!navigator.onLine) {
+      setOffline(true);
+      return;
+    }
+
     setLoading(true);
     try {
-      await base44.auth.register({ email, password });
+      await base44.auth.register({ email: email.trim(), password });
       setShowOtp(true);
+      setOtpStartedAt(Date.now());
+      setOtpRemaining(OTP_UI_TTL_MS);
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -40,87 +121,120 @@ export default function Register() {
 
   const handleVerify = async () => {
     setError("");
+    if (!otpRemaining) {
+      setError("This verification screen has expired. Request a new code.");
+      return;
+    }
+    if (otpCode.length < 6) return;
     setLoading(true);
     try {
-      const result = await base44.auth.verifyOtp({ email, otpCode });
+      const result = await base44.auth.verifyOtp({ email: email.trim(), otpCode });
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
       }
-      window.location.href = safeReturnTo();
+      window.location.href = returnTo;
     } catch (err) {
-      setError(err.message || "Invalid verification code");
+      setError(err?.status === 429 ? "Too many verification attempts. Please wait before trying again." : (err.message || "Invalid or expired verification code."));
     } finally {
       setLoading(false);
     }
   };
 
   const handleResend = async () => {
+    if (resendBusy || !navigator.onLine) {
+      if (!navigator.onLine) setOffline(true);
+      return;
+    }
+    setResendBusy(true);
     setError("");
     try {
-      await base44.auth.resendOtp(email);
-      toast({
-        title: "Code sent",
-        description: "Check your email for the new code.",
-      });
+      await base44.auth.resendOtp(email.trim());
+      setOtpStartedAt(Date.now());
+      setOtpRemaining(OTP_UI_TTL_MS);
+      setOtpCode("");
+      toast({ title: "New code sent", description: "Check your email for the latest verification code." });
     } catch (err) {
-      setError(err.message || "Failed to resend code");
+      setError(err?.status === 429 ? "Too many code requests. Please wait before requesting another." : (err.message || "Failed to resend code."));
+    } finally {
+      setResendBusy(false);
     }
   };
 
   const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", safeReturnTo());
+    if (!navigator.onLine) {
+      setOffline(true);
+      return;
+    }
+    base44.auth.loginWithProvider("google", returnTo);
   };
 
+  const handleGitHub = () => {
+    if (!navigator.onLine) {
+      setOffline(true);
+      return;
+    }
+    base44.auth.loginWithProvider("github", returnTo);
+  };
+
+  if (offline) {
+    return <AuthUnavailable offline message="Reconnect to the internet to create your StudyOS account. Your password is sent to Base44 authentication and is not saved in a StudyOS database entity." />;
+  }
+
   if (showOtp) {
+    const minutes = Math.floor(otpRemaining / 60000);
+    const seconds = Math.floor((otpRemaining % 60000) / 1000).toString().padStart(2, "0");
+
     return (
-      <AuthLayout
-        icon={Mail}
-        title="Verify your email"
-        subtitle={`We sent a code to ${email}`}
-      >
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-            {error}
+      <AuthLayout icon={Mail} title="Verify your email" subtitle={`Enter the code we sent to ${email}`}>
+        <div className="mb-6 rounded-2xl border border-blue-400/10 bg-blue-400/[0.04] p-4 text-sm text-white/60">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-400/10">
+              <ShieldCheck className="h-5 w-5 text-blue-300" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="font-semibold text-white/85">Email verification</p>
+              <p className="text-xs leading-5 text-white/40">This screen expires after 10 minutes and requires a fresh code after expiry.</p>
+            </div>
           </div>
-        )}
-        <div className="flex justify-center mb-6">
+        </div>
+
+        {error && <div role="alert" className="mb-4 rounded-2xl border border-red-400/15 bg-red-400/[0.06] p-3.5 text-sm text-red-200">{error}</div>}
+
+        <div className="mb-6 flex justify-center">
           <InputOTP
             maxLength={6}
             value={otpCode}
             onChange={setOtpCode}
             autoFocus
             autoComplete="one-time-code"
+            disabled={loading || !otpRemaining}
           >
             <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
+              {[0,1,2,3,4,5].map((index) => <InputOTPSlot key={index} index={index} />)}
             </InputOTPGroup>
           </InputOTP>
         </div>
+
+        <div className="mb-5 text-center text-xs text-white/40">
+          {otpRemaining ? `Code window: ${minutes}:${seconds}` : "Code window expired"}
+        </div>
+
         <Button
-          className="w-full h-12 font-medium"
+          className="h-12 w-full bg-emerald-400 font-semibold text-black hover:bg-emerald-300"
           onClick={handleVerify}
-          disabled={loading || otpCode.length < 6}
+          disabled={loading || otpCode.length < 6 || !otpRemaining}
         >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Verifying...
-            </>
-          ) : (
-            "Verify"
-          )}
+          {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</> : "Verify email"}
         </Button>
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Didn't receive the code?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">
-            Resend
-          </button>
-        </p>
+
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={resendBusy || loading}
+          className="mt-4 w-full text-center text-sm font-medium text-emerald-400 transition hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {resendBusy ? "Sending..." : "Send a new code"}
+        </button>
       </AuthLayout>
     );
   }
@@ -129,102 +243,99 @@ export default function Register() {
     <AuthLayout
       icon={UserPlus}
       title="Create your account"
-      subtitle="Sign up to get started"
+      subtitle="Set up a secure StudyOS account in a few steps"
       footer={
         <>
           Already have an account?{" "}
-          <Link
-            to={"/login" + (safeReturnTo() !== "/" ? "?returnTo=" + encodeURIComponent(safeReturnTo()) : "")}
-            className="text-primary font-medium hover:underline"
-          >
+          <Link to={"/login" + (returnTo !== "/" ? "?returnTo=" + encodeURIComponent(returnTo) : "")} className="font-medium text-emerald-400 hover:text-emerald-300">
             Log in
           </Link>
         </>
       }
     >
-      <Button
-        variant="outline"
-        className="w-full h-12 text-sm font-medium mb-6"
-        onClick={handleGoogle}
-      >
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continue with Google
-      </Button>
-
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">or</span>
-        </div>
+      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+        <Button type="button" variant="outline" className="h-12 border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white" onClick={handleGoogle} disabled={loading}>
+          <GoogleIcon className="mr-2 h-5 w-5" /> Google
+        </Button>
+        <Button type="button" variant="outline" className="h-12 border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white" onClick={handleGitHub} disabled={loading}>
+          <Github className="mr-2 h-5 w-5" /> GitHub
+        </Button>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-          {error}
-        </div>
-      )}
+      <div className="mb-6 flex items-center gap-3">
+        <div className="h-px flex-1 bg-white/10" />
+        <span className="text-[10px] uppercase tracking-[0.2em] text-white/30">standard sign up</span>
+        <div className="h-px flex-1 bg-white/10" />
+      </div>
+
+      {error && <div role="alert" className="mb-4 rounded-2xl border border-red-400/15 bg-red-400/[0.06] p-3.5 text-sm text-red-200">{error}</div>}
+      {ageError && <div role="alert" className="mb-4 rounded-2xl border border-amber-300/15 bg-amber-300/[0.06] p-3.5 text-sm text-amber-100">{ageError}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email" className="text-white/75">Email</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              autoFocus
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" aria-hidden="true" />
+            <Input id="email" type="email" autoComplete="email" autoFocus placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-12 border-white/10 bg-black/20 pl-10 text-white placeholder:text-white/25 focus-visible:ring-emerald-400/30" required disabled={loading} />
           </div>
         </div>
+
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="dob" className="text-white/75">Date of birth</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
+            <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" aria-hidden="true" />
+            <Input id="dob" type="date" autoComplete="bday" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} max={new Date().toISOString().slice(0,10)} className="h-12 border-white/10 bg-black/20 pl-10 text-white focus-visible:ring-emerald-400/30" required disabled={loading} />
           </div>
+          <p className="text-[11px] text-white/30">StudyOS currently accepts accounts for ages 13 and above. Date of birth is used here for the eligibility check and is not sent to the authentication API.</p>
         </div>
+
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+          <Label htmlFor="password" className="text-white/75">Password</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
-              id="confirm"
-              type="password"
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-10 h-12"
-              required
-            />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" aria-hidden="true" />
+            <Input id="password" type="password" autoComplete="new-password" placeholder="Create a strong password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-12 border-white/10 bg-black/20 pl-10 text-white placeholder:text-white/25 focus-visible:ring-emerald-400/30" required disabled={loading} />
+          </div>
+          <div className="grid grid-cols-5 gap-1" aria-label={`Password strength ${passwordScore} of 5`}>
+            {[1,2,3,4,5].map((level) => (
+              <div key={level} className={`h-1.5 rounded-full transition-colors ${passwordScore >= level ? "bg-emerald-400" : "bg-white/10"}`} />
+            ))}
+          </div>
+          <div className="grid gap-1 text-[10px] text-white/35 sm:grid-cols-2">
+            <span className={checks.length ? "text-emerald-300/80" : ""}>• 12+ characters</span>
+            <span className={checks.upper ? "text-emerald-300/80" : ""}>• uppercase</span>
+            <span className={checks.lower ? "text-emerald-300/80" : ""}>• lowercase</span>
+            <span className={checks.number ? "text-emerald-300/80" : ""}>• number</span>
+            <span className={checks.symbol ? "text-emerald-300/80" : ""}>• symbol</span>
           </div>
         </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
-            </>
-          ) : (
-            "Create account"
-          )}
+
+        <div className="space-y-2">
+          <Label htmlFor="confirm" className="text-white/75">Confirm password</Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" aria-hidden="true" />
+            <Input id="confirm" type="password" autoComplete="new-password" placeholder="Repeat your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-12 border-white/10 bg-black/20 pl-10 text-white placeholder:text-white/25 focus-visible:ring-emerald-400/30" required disabled={loading} />
+          </div>
+        </div>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.025] p-3.5">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+            className="mt-1 h-4 w-4 shrink-0 accent-emerald-400"
+            disabled={loading}
+            required
+          />
+          <span className="text-xs leading-5 text-white/50">
+            I agree to the{" "}
+            <Link to="/terms" className="font-medium text-emerald-400 hover:text-emerald-300" target="_blank" rel="noreferrer">Terms & Conditions</Link>
+            {" "}and acknowledge the{" "}
+            <Link to="/privacy" className="font-medium text-emerald-400 hover:text-emerald-300" target="_blank" rel="noreferrer">Privacy Policy</Link>.
+          </span>
+        </label>
+
+        <Button type="submit" className="h-12 w-full bg-emerald-400 font-semibold text-black hover:bg-emerald-300" disabled={loading}>
+          {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating securely...</> : <><CheckCircle2 className="mr-2 h-4 w-4" /> Create secure account</>}
         </Button>
       </form>
     </AuthLayout>
