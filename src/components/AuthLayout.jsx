@@ -26,7 +26,6 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
         )}
         <AppFooter compact />
       </div>
-      </div>
     </div>
   );
 }
