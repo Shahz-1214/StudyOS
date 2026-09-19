@@ -1,0 +1,9 @@
+{
+  "type": "sentry",
+  "scopes": [
+    "org:read",
+    "project:read",
+    "team:read",
+    "event:read"
+  ]
+}
