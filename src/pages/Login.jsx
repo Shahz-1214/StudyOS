@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Github, LogIn, Lock, Mail, ShieldCheck, Loader2, WifiOff } from "lucide-react";
+import { Github, LogIn, Lock, Mail, ShieldCheck, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import AuthUnavailable from "@/components/AuthUnavailable";
 import GoogleIcon from "@/components/GoogleIcon";
