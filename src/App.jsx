@@ -18,6 +18,7 @@ import Profile from '@/pages/Profile';
 import Progress from '@/pages/Progress';
 import ComingSoon from '@/pages/ComingSoon';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import AuthLoadingScreen from '@/components/AuthLoadingScreen';
 import Practice from '@/pages/Practice';
 import StudyLens from '@/pages/StudyLens';
 import Homework from '@/pages/Homework';
@@ -47,13 +48,9 @@ const AuthenticatedApp = () => {
   const protectedPrefixes = ["/tool/", "/practice", "/past-papers", "/exam-dates", "/subject-hub", "/exam-vault", "/help", "/subscription", "/onboarding", "/progress", "/profile"];
   const isProtectedRoute = location.pathname === "/" || protectedPrefixes.some((prefix) => location.pathname.startsWith(prefix));
 
-  // Show loading spinner while checking app public settings or auth
+  // Show a branded security/loading state while the auth bootstrap is running.
   if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
+    return <AuthLoadingScreen />;
   }
 
   // Handle authentication errors — but never block the dedicated auth pages
