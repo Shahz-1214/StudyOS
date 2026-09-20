@@ -34,6 +34,10 @@
     "last_practiced": {
       "type": "string",
       "format": "date-time"
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [
