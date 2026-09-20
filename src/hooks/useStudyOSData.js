@@ -28,9 +28,14 @@ export function useStudyOSData() {
         base44.entities.Concept.list("-created_date", 300),
         base44.entities.Event.list("-occurred_at", 20),
       ]);
-      setProfile(profiles[0] || null);
-      setSubjects(subs);
-      setConcepts(cons);
+      const canonical = [...profiles].filter((p) => !p.archived).sort((a, b) => { const completed = Number(!!b.onboarding_completed) - Number(!!a.onboarding_completed); return completed || String(a.created_date || "").localeCompare(String(b.created_date || "")); })[0] || null;
+      const activeSubjects = canonical ? await base44.entities.Subject.filter({ learner_profile_id: canonical.id, archived: false }, "order_index", 100) : [];
+      const activeSubjectIds = new Set(activeSubjects.map((s) => s.id));
+      const activeConcepts = cons.filter((c) => !c.archived && activeSubjectIds.has(c.subject_id));
+      setProfile(canonical);
+      setSubjects(canonical ? await base44.entities.Subject.filter({ learner_profile_id: canonical.id, archived: false }, "order_index", 100) : []);
+      const subjectIds = new Set((canonical ? await base44.entities.Subject.filter({ learner_profile_id: canonical.id, archived: false }, "order_index", 100) : []).map((s) => s.id));
+      setConcepts(cons.filter((c) => !c.archived && subjectIds.has(c.subject_id)));
       setEvents(evs);
     } catch (err) {
       setError(err);
