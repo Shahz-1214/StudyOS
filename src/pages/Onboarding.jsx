@@ -81,16 +81,18 @@ export default function Onboarding() {
       }
 
       // Only create subjects that aren't already present (no duplicates).
-      const existingNames = new Set((subjects || []).map((s) => s.name));
+      const existingNames = new Set((subjects || []).filter((s) => !s.archived).map((s) => s.name.trim().toLowerCase()));
       let order = (subjects || []).length;
       for (const name of selectedSubjects) {
-        if (existingNames.has(name)) continue;
+        if (existingNames.has(name.trim().toLowerCase())) continue;
         const preset = SUBJECT_PRESETS.find((p) => p.name === name);
         const subject = await base44.entities.Subject.create({
           name,
           color: preset?.color || "#3B82F6",
           order_index: order++,
           mastery_estimate: 0,
+          learner_profile_id: profileId,
+          archived: false,
         });
         const conceptNames = preset?.concepts || [];
         if (conceptNames.length) {
