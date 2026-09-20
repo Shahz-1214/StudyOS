@@ -1,0 +1,72 @@
+{
+  "name": "LearnerExam",
+  "type": "object",
+  "properties": {
+    "learner_profile_id": {
+      "type": "string",
+      "default": ""
+    },
+    "title": {
+      "type": "string"
+    },
+    "subject_id": {
+      "type": "string",
+      "default": ""
+    },
+    "board_id": {
+      "type": "string",
+      "default": ""
+    },
+    "exam_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "exam_type": {
+      "type": "string",
+      "enum": [
+        "board",
+        "school",
+        "mock",
+        "university",
+        "entrance",
+        "other"
+      ],
+      "default": "board"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "upcoming",
+        "completed",
+        "cancelled"
+      ],
+      "default": "upcoming"
+    },
+    "notes": {
+      "type": "string",
+      "default": ""
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "title",
+    "exam_date"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

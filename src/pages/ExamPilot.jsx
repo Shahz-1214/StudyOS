@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Navigate, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
@@ -9,11 +9,12 @@ import StudyPanel from "@/components/StudyPanel";
 import QuizRunner from "@/components/practice/QuizRunner";
 import QuizResults from "@/components/practice/QuizResults";
 import PageSkeleton from "@/components/PageSkeleton";
+import ExamManager from "@/components/exams/ExamManager";
 import { Loader2, CalendarClock, ClipboardList, Sparkles, AlertTriangle, Target, Clock, ListChecks, FileText, Archive } from "lucide-react";
 
 export default function ExamPilot() {
   const { user } = useAuth();
-  const { profile, subjects, concepts, loading, reload } = useStudyOSData();
+  const { profile, subjects, concepts, exams, loading, reload } = useStudyOSData();
   const navigate = useNavigate();
 
   const [tab, setTab] = useState("exam");
@@ -33,6 +34,15 @@ export default function ExamPilot() {
   const weakConcepts = (concepts || [])
     .filter((c) => (c.mastery || 0) < 75)
     .sort((a, b) => (a.mastery || 0) - (b.mastery || 0));
+
+  // Next personal exam (LearnerExam). Used to constrain the study plan so no
+  // task is scheduled on or after the exam date.
+  const nextExam = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return (exams || [])
+      .filter((e) => e.exam_date && e.exam_date >= today)
+      .sort((a, b) => String(a.exam_date).localeCompare(String(b.exam_date)))[0] || null;
+  }, [exams]);
 
   useEffect(() => {
     if (tab === "plan" && !pastPlans.length) {
@@ -92,6 +102,7 @@ export default function ExamPilot() {
         weak_concepts: weakConcepts.slice(0, 15).map((c) => ({ name: c.name, mastery: c.mastery })),
         daily_minutes: profile.daily_study_minutes || 60,
         days,
+        exam_date: nextExam?.exam_date || "",
       });
       const data = res.data;
       const created = await base44.entities.StudyPlan.create({
@@ -179,6 +190,15 @@ export default function ExamPilot() {
 
       {tab === "plan" && (
         <div className="space-y-4">
+          <ExamManager profile={profile} subjects={subjects} exams={exams} onChange={reload} />
+
+          {nextExam && (
+            <StudyPanel className="p-4 flex items-center gap-2 text-[13px] text-foreground">
+              <CalendarClock className="w-4 h-4 text-primary shrink-0" />
+              <span>Next exam: <span className="font-semibold">{nextExam.title}</span> on {new Date(`${nextExam.exam_date}T00:00:00`).toLocaleDateString()}. Your plan will end on or before this date.</span>
+            </StudyPanel>
+          )}
+
           <StudyPanel className="p-6">
             <div className="eyebrow mb-3">Plan length</div>
             <div className="flex items-center gap-3 mb-4">

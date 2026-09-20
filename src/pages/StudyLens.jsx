@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { base44 } from "@/api/base44Client";
 import { track, EVENTS } from "@/lib/analytics";
+import { uploadPrivateFile } from "@/lib/upload";
 import StudyPanel from "@/components/StudyPanel";
 import PageSkeleton from "@/components/PageSkeleton";
 import { Loader2, ScanLine, ImagePlus, Type, Sparkles, AlertTriangle, ArrowRight, Lightbulb } from "lucide-react";
@@ -13,7 +14,9 @@ export default function StudyLens() {
   const { profile, concepts, loading } = useStudyOSData();
   const [tab, setTab] = useState("text");
   const [text, setText] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [fileUri, setFileUri] = useState("");
+  const [fileSize, setFileSize] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
@@ -25,27 +28,24 @@ export default function StudyLens() {
   async function onFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const allowed = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
-    if (!allowed.includes(file.type) || file.size > 10 * 1024 * 1024) {
-      setError("Use a JPG, PNG, WEBP, HEIC or HEIF image up to 10MB.");
-      return;
-    }
     setBusy(true); setError(null);
     try {
-      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
-      setImageUrl(file_url);
+      const { file_uri, size } = await uploadPrivateFile("image", file);
+      setFileUri(file_uri);
+      setFileSize(size);
+      setPreviewUrl(URL.createObjectURL(file));
     } catch (err) {
-      setError("Couldn't upload the image. Try again.");
+      setError(err?.message || "Couldn't upload the image. Try again.");
     }
     setBusy(false);
   }
 
   async function analyze() {
-    if (!text.trim() && !imageUrl) return;
+    if (!text.trim() && !fileUri) return;
     setBusy(true); setError(null); setResult(null);
     try {
-      track(EVENTS.STUDYLENS_USED, { mode: imageUrl ? "image" : "text" });
-      const res = await base44.functions.invoke("studyLensExtract", { text: text.trim(), image_url: imageUrl });
+      track(EVENTS.STUDYLENS_USED, { mode: fileUri ? "image" : "text" });
+      const res = await base44.functions.invoke("studyLensExtract", { text: text.trim(), file_uri: fileUri, file_size: fileSize });
       setResult(res.data);
     } catch (err) {
       setError("Analysis failed. Please try again.");
@@ -85,14 +85,14 @@ export default function StudyLens() {
           <div>
             <label className="block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center cursor-pointer hover:bg-secondary/40">
               <ImagePlus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-              <div className="text-sm text-foreground">{imageUrl ? "Image uploaded ✓ — tap to replace" : "Tap to upload a photo of the problem"}</div>
+              <div className="text-sm text-foreground">{fileUri ? "Image uploaded ✓ — tap to replace" : "Tap to upload a photo of the problem"}</div>
               <input type="file" accept="image/*" onChange={onFile} className="hidden" />
             </label>
-            {imageUrl && <img src={imageUrl} alt="upload" className="mt-3 max-h-48 rounded-lg border border-border" />}
+            {previewUrl && <img src={previewUrl} alt="preview" className="mt-3 max-h-48 rounded-lg border border-border" />}
           </div>
         )}
         <div className="flex justify-end mt-4">
-          <button onClick={analyze} disabled={busy || (!text.trim() && !imageUrl)} className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-5 py-2.5 disabled:opacity-40 hover:opacity-90">
+          <button onClick={analyze} disabled={busy || (!text.trim() && !fileUri)} className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-5 py-2.5 disabled:opacity-40 hover:opacity-90">
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {busy ? "Analyzing…" : "Analyze"}
           </button>

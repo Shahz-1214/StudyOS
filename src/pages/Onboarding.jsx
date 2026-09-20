@@ -6,13 +6,16 @@ import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { track, EVENTS } from "@/lib/analytics";
 import { SUBJECT_PRESETS, EDUCATION_LEVELS, GOAL_PRESETS, STUDY_TIME_OPTIONS } from "@/lib/subjectPresets";
 import StudyPanel from "@/components/StudyPanel";
-import { Loader2, Check, ArrowRight, ArrowLeft, Sparkles, Globe } from "lucide-react";
+import UpcomingExamsStep from "@/components/onboarding/UpcomingExamsStep";
+import { Loader2, Check, ArrowRight, ArrowLeft, Sparkles, Globe, Layers } from "lucide-react";
 
-// Onboarding flow: Country → Board → Education → Subjects → Goal → Study time.
-// Country and Board are distinct steps. Boards come from the StudyOS board
-// registry (no invented boards). Re-entering onboarding updates an existing
-// profile and only creates subjects that aren't already present.
-const STEPS = ["Country", "Board", "Education", "Subjects", "Goal", "Study time"];
+// Onboarding flow. CRITICAL: Country and Board are INDEPENDENT selectors.
+//   - Country is its own standalone field (not a board route).
+//   - Board / Qualification is its own independent list showing ALL active
+//     boards, never filtered/hidden by the chosen country.
+//   - Both are stored separately on LearnerProfile (country, board_id).
+//   - An optional Upcoming Exams step lets the learner add personal exams.
+const STEPS = ["Country", "Board", "Education", "Subjects", "Exams", "Goal", "Study time"];
 
 export default function Onboarding() {
   const { user } = useAuth();
@@ -28,6 +31,7 @@ export default function Onboarding() {
   const [boardId, setBoardId] = useState("");
   const [education, setEducation] = useState("high_school");
   const [selectedSubjects, setSelectedSubjects] = useState(["Mathematics", "Physics"]);
+  const [exams, setExams] = useState([]);
   const [goal, setGoal] = useState(GOAL_PRESETS[0]);
   const [studyTime, setStudyTime] = useState(60);
 
@@ -39,13 +43,24 @@ export default function Onboarding() {
       .finally(() => setBoardsLoaded(true));
   }, [user]);
 
-  const countries = useMemo(() => [...new Set(boards.map((b) => b.country))].sort(), [boards]);
-  const countryBoards = useMemo(() => boards.filter((b) => b.country === country), [boards, country]);
+  // Country list is its own independent list (distinct countries present in
+  // the verified board registry). It does NOT filter the board list.
+  const countries = useMemo(() => [...new Set(boards.map((b) => b.country).filter(Boolean))].sort(), [boards]);
+  // Board list: ALL active boards, independent of country. Grouped by
+  // education_system only for readability — never hidden by country.
+  const boardGroups = useMemo(() => {
+    const groups = new Map();
+    for (const b of boards) {
+      const key = b.education_system || b.board || "Other";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(b);
+    }
+    return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [boards]);
   const selectedBoard = useMemo(() => boards.find((b) => b.board_id === boardId), [boards, boardId]);
 
   if (loading || !boardsLoaded) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/" replace />;
-  // Already-onboarded users are not forced through again.
   if (profile && profile.onboarding_completed) return <Navigate to="/" replace />;
 
   const toggleSubject = (name) => {
@@ -109,6 +124,21 @@ export default function Onboarding() {
         }
       }
 
+      // Optional personal exams (distinct from board ExamSeries).
+      if (exams.length) {
+        await base44.entities.LearnerExam.bulkCreate(
+          exams.map((e) => ({
+            learner_profile_id: profileId,
+            title: e.title,
+            exam_date: e.exam_date,
+            exam_type: e.exam_type || "board",
+            board_id: boardId || "",
+            status: "upcoming",
+            archived: false,
+          }))
+        );
+      }
+
       await track(EVENTS.ONBOARDING_COMPLETED, {});
       await reload();
       navigate("/");
@@ -119,10 +149,8 @@ export default function Onboarding() {
   };
 
   const canNext =
-    step === 0 ? !!country :
-    step === 1 ? !!boardId :
     step === 3 ? selectedSubjects.length > 0 :
-    true;
+    true; // Country, Board, Exams, Goal, Study time are all optional/skippable.
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
@@ -149,12 +177,12 @@ export default function Onboarding() {
           {step === 0 && (
             <div>
               <h2 className="text-lg font-bold text-foreground">Where are you studying?</h2>
-              <p className="text-sm text-muted-foreground mt-1 mb-4">Pick your country or system. This sets which boards are available next.</p>
+              <p className="text-sm text-muted-foreground mt-1 mb-4">Pick your country. This is your own field — it doesn't restrict which board you can choose next.</p>
               <div className="grid grid-cols-1 gap-2">
                 {countries.map((c) => (
                   <button
                     key={c}
-                    onClick={() => { setCountry(c); setBoardId(""); }}
+                    onClick={() => setCountry(c)}
                     className={`flex items-center justify-between rounded-lg border px-4 py-3 text-sm transition-colors ${
                       country === c ? "border-primary bg-primary/5 text-foreground" : "border-border text-muted-foreground hover:text-foreground"
                     }`}
@@ -164,39 +192,52 @@ export default function Onboarding() {
                   </button>
                 ))}
                 {countries.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No boards available right now. You can continue without a board.</p>
+                  <p className="text-sm text-muted-foreground">No countries listed yet. You can continue and pick a board next.</p>
                 )}
               </div>
+              <button onClick={() => setCountry("")} className={`mt-3 text-[11px] ${country ? "text-muted-foreground hover:text-foreground" : "text-primary font-semibold"}`}>
+                {country ? "Clear selection" : "Skip for now"}
+              </button>
             </div>
           )}
 
           {step === 1 && (
             <div>
-              <h2 className="text-lg font-bold text-foreground">Select your board</h2>
-              <p className="text-sm text-muted-foreground mt-1 mb-4">Boards available for {country}. This matches your syllabus, past papers and exam dates.</p>
-              <div className="grid grid-cols-1 gap-2">
-                {countryBoards.map((b) => (
-                  <button
-                    key={b.board_id}
-                    onClick={() => setBoardId(b.board_id)}
-                    className={`flex items-start justify-between rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
-                      boardId === b.board_id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-                    }`}
-                  >
-                    <div>
-                      <div className="font-semibold text-foreground">{b.board}</div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">{b.education_system} · {b.qualification} · {b.level}</div>
+              <h2 className="text-lg font-bold text-foreground">Select your board / qualification</h2>
+              <p className="text-sm text-muted-foreground mt-1 mb-4">All supported boards are shown — pick the one that matches your syllabus, regardless of country.</p>
+              <div className="max-h-80 overflow-y-auto space-y-4 pr-1">
+                {boardGroups.map(([system, list]) => (
+                  <div key={system}>
+                    <div className="eyebrow flex items-center gap-1.5 mb-1.5"><Layers className="w-3 h-3" /> {system}</div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {list.map((b) => (
+                        <button
+                          key={b.board_id}
+                          onClick={() => setBoardId(b.board_id)}
+                          className={`flex items-start justify-between rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                            boardId === b.board_id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div>
+                            <div className="font-semibold text-foreground">{b.board}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{b.qualification} · {b.level} · {b.country}</div>
+                          </div>
+                          {boardId === b.board_id && <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
+                        </button>
+                      ))}
                     </div>
-                    {boardId === b.board_id && <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
-                  </button>
+                  </div>
                 ))}
-                {countryBoards.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No boards for this country yet. Go back and pick another, or continue.</p>
+                {boardGroups.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No boards available right now. You can continue without one.</p>
                 )}
               </div>
               {selectedBoard?.requires_subboard && (
-                <p className="text-[11px] text-amber-700 mt-3">{selectedBoard.qualification} is a qualification level — you'll pick your exact sub-board, subject and year on the official page when using resources.</p>
+                <p className="text-[11px] text-amber-600 mt-3">{selectedBoard.qualification} is a qualification level — you'll pick your exact sub-board, subject and year on the official page when using resources.</p>
               )}
+              <button onClick={() => setBoardId("")} className={`mt-3 text-[11px] ${boardId ? "text-muted-foreground hover:text-foreground" : "text-primary font-semibold"}`}>
+                {boardId ? "Clear selection" : "Skip for now"}
+              </button>
             </div>
           )}
 
@@ -248,6 +289,10 @@ export default function Onboarding() {
           )}
 
           {step === 4 && (
+            <UpcomingExamsStep exams={exams} setExams={setExams} />
+          )}
+
+          {step === 5 && (
             <div>
               <h2 className="text-lg font-bold text-foreground">What's your main goal?</h2>
               <p className="text-sm text-muted-foreground mt-1 mb-4">StudyOS will orient your plan around this.</p>
@@ -268,7 +313,7 @@ export default function Onboarding() {
             </div>
           )}
 
-          {step === 5 && (
+          {step === 6 && (
             <div>
               <h2 className="text-lg font-bold text-foreground">How much can you study daily?</h2>
               <p className="text-sm text-muted-foreground mt-1 mb-4">ExamPilot will respect this limit.</p>

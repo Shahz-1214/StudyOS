@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { enforceAIQuota } from '../../shared/aiGuard.ts';
+import { validateUploadedFile, createSignedFileUrl } from '../../shared/uploadSecurity.ts';
+import { buildLearnerContext, AI_FACT_RULE } from '../../shared/learnerContext.ts';
 
 export default async function(req) {
   try {
@@ -12,10 +14,22 @@ export default async function(req) {
 
     const body = await req.json();
     const text = (body.text || '').trim();
-    const imageUrl = (body.image_url || '').trim();
-    if (!text && !imageUrl) return Response.json({ error: 'Provide text or an image' }, { status: 400 });
+    const fileUri = (body.file_uri || '').trim();
+    const declaredSize = typeof body.file_size === 'number' ? body.file_size : undefined;
+    if (!text && !fileUri) return Response.json({ error: 'Provide text or an image' }, { status: 400 });
+
+    let imageUrl = '';
+    if (fileUri) {
+      const v = validateUploadedFile('image', fileUri, declaredSize);
+      if (!v.ok) return Response.json({ error: v.error, code: v.code }, { status: 400 });
+      imageUrl = await createSignedFileUrl(base44, fileUri, 180);
+    }
+
+    const ctx = await buildLearnerContext(base44);
 
     const prompt = `You are StudyLens, an academic vision assistant. Analyze the following problem ${imageUrl ? 'from the provided image' : 'from the text below'}. Do NOT just give the answer — structure the learning path so the student learns.
+
+${ctx.contextText ? `Learner context:\n${ctx.contextText}\n\n` : ''}${AI_FACT_RULE}
 
 Extract:
 - problem_summary: a concise restatement of the problem
@@ -51,6 +65,6 @@ ${text ? `Problem text:\n${text}` : 'See the attached image.'}`;
       related_concept_names: result.related_concept_names || [],
     });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: 'Analysis failed. Please try again.' }, { status: 500 });
   }
 }

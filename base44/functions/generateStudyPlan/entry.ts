@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { enforceAIQuota } from '../../shared/aiGuard.ts';
+import { buildLearnerContext, AI_FACT_RULE } from '../../shared/learnerContext.ts';
 
 export default async function(req) {
   try {
@@ -13,14 +14,28 @@ export default async function(req) {
     const body = await req.json();
     const weakConcepts = Array.isArray(body.weak_concepts) ? body.weak_concepts : [];
     const dailyMinutes = Math.min(Math.max(parseInt(body.daily_minutes) || 60, 15), 480);
-    const days = Math.min(Math.max(parseInt(body.days) || 7, 1), 30);
+    let days = Math.min(Math.max(parseInt(body.days) || 7, 1), 30);
     const examDate = (body.exam_date || '').trim();
 
     if (!weakConcepts.length) return Response.json({ error: 'No weak concepts provided' }, { status: 400 });
 
+    // Never schedule past the exam date: cap the plan length to the days
+    // remaining before the exam so no task falls on or after exam day.
+    let examConstraint = '';
+    if (examDate) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const exam = new Date(`${examDate}T00:00:00`);
+      const diffDays = Math.ceil((exam.getTime() - today.getTime()) / 86400000);
+      if (diffDays > 0 && days > diffDays) days = diffDays;
+      examConstraint = `Target exam date: ${examDate}. The plan MUST end on or before this date — no study tasks on or after exam day. The final days should taper toward light review, not new material.`;
+    }
+
+    const ctx = await buildLearnerContext(base44);
     const conceptList = weakConcepts.map((c) => `- ${c.name} (mastery ${c.mastery ?? 0}/100)`).join('\n');
 
-    const prompt = `You are a study-plan scheduler. Build a ${days}-day revision plan for a student who studies ${dailyMinutes} minutes per day. Prioritize the weakest concepts first, use spaced repetition across days, and build in review + practice. ${examDate ? `Target exam date: ${examDate}.` : ''}
+    const prompt = `You are a study-plan scheduler. Build a ${days}-day revision plan for a student who studies ${dailyMinutes} minutes per day. Prioritize the weakest concepts first, use spaced repetition across days, and build in review + practice. ${examConstraint}
+
+${ctx.contextText ? `Learner context:\n${ctx.contextText}\n\n` : ''}${AI_FACT_RULE}
 
 Weak concepts:
 ${conceptList}
@@ -61,6 +76,6 @@ Return JSON: { summary (string), plan: [{ day (number), label (string), tasks: [
       })),
     });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: 'Could not build the plan. Try again.' }, { status: 500 });
   }
 }

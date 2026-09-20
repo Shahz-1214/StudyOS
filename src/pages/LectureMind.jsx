@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { base44 } from "@/api/base44Client";
 import { track, EVENTS } from "@/lib/analytics";
+import { uploadPrivateFile } from "@/lib/upload";
 import StudyPanel from "@/components/StudyPanel";
 import PageSkeleton from "@/components/PageSkeleton";
 import { Loader2, Headphones, Upload, Sparkles, AlertTriangle, FileText, Layers, HelpCircle, MessageSquareQuote, Send, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
@@ -12,7 +13,8 @@ export default function LectureMind() {
   const { user } = useAuth();
   const { profile, loading } = useStudyOSData();
   const [title, setTitle] = useState("");
-  const [audioUrl, setAudioUrl] = useState("");
+  const [audioUri, setAudioUri] = useState("");
+  const [audioSize, setAudioSize] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [lecture, setLecture] = useState(null);
@@ -32,29 +34,26 @@ export default function LectureMind() {
   async function onFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("audio/") || file.size > 25 * 1024 * 1024) {
-      setError("Use an audio file up to 25MB.");
-      return;
-    }
     setBusy(true); setError(null);
     try {
-      const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
-      setAudioUrl(file_url);
+      const { file_uri, size } = await uploadPrivateFile("audio", file);
+      setAudioUri(file_uri);
+      setAudioSize(size);
       if (!title) setTitle(file.name.replace(/\.[^.]+$/, ""));
-    } catch { setError("Couldn't upload the audio."); }
+    } catch (err) { setError(err?.message || "Couldn't upload the audio."); }
     setBusy(false);
   }
 
   async function process() {
-    if (!audioUrl) return;
+    if (!audioUri) return;
     setBusy(true); setError(null); setLecture(null); setAnswer(null);
     try {
       track(EVENTS.LECTURE_PROCESSED, {});
-      const res = await base44.functions.invoke("processLecture", { audio_url: audioUrl, title: title.trim() || "Untitled lecture" });
+      const res = await base44.functions.invoke("processLecture", { file_uri: audioUri, file_size: audioSize, title: title.trim() || "Untitled lecture" });
       const data = res.data;
       const created = await base44.entities.Lecture.create({
         title: title.trim() || "Untitled lecture",
-        audio_url: audioUrl,
+        audio_url: audioUri,
         transcript: data.transcript,
         summary: data.summary,
         chunks: data.chunks,
@@ -97,12 +96,12 @@ export default function LectureMind() {
             className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-[14px] text-foreground mb-4 focus:outline-none focus:ring-2 focus:ring-primary" />
           <label className="block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center cursor-pointer hover:bg-secondary/40">
             <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-            <div className="text-sm text-foreground">{audioUrl ? "Audio uploaded ✓ — tap to replace" : "Tap to upload an audio recording"}</div>
+            <div className="text-sm text-foreground">{audioUri ? "Audio uploaded ✓ — tap to replace" : "Tap to upload an audio recording"}</div>
             <div className="text-[11px] text-muted-foreground mt-1">mp3, wav, m4a, ogg — up to 25MB</div>
             <input type="file" accept="audio/*" onChange={onFile} className="hidden" />
           </label>
           <div className="flex justify-end mt-4">
-            <button onClick={process} disabled={busy || !audioUrl} className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-5 py-2.5 disabled:opacity-40 hover:opacity-90">
+            <button onClick={process} disabled={busy || !audioUri} className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-5 py-2.5 disabled:opacity-40 hover:opacity-90">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {busy ? "Transcribing & analyzing…" : "Process lecture"}
             </button>
@@ -116,7 +115,7 @@ export default function LectureMind() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-foreground">{lecture.title}</h2>
-            <button onClick={() => { setLecture(null); setTitle(""); setAudioUrl(""); setAnswer(null); }} className="inline-flex items-center gap-1.5 rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-3 py-2 hover:bg-secondary/70">
+            <button onClick={() => { setLecture(null); setTitle(""); setAudioUri(""); setAnswer(null); }} className="inline-flex items-center gap-1.5 rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-3 py-2 hover:bg-secondary/70">
               <RotateCcw className="w-3.5 h-3.5" /> New lecture
             </button>
           </div>

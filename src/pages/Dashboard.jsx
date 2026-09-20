@@ -42,9 +42,8 @@ const NOISE_EVENTS = new Set([
 ]);
 
 export default function Dashboard() {
-  const { user, profile, subjects, concepts, events, loading, error } = useStudyOSData();
+  const { user, profile, subjects, concepts, events, exams, loading, error } = useStudyOSData();
   const navigate = useNavigate();
-  const [nextExam, setNextExam] = useState(null);
   const [openTasks, setOpenTasks] = useState(null);
 
   const overallMastery = useMemo(() => {
@@ -67,34 +66,21 @@ export default function Dashboard() {
     [events]
   );
 
+  // Next PERSONAL exam (LearnerExam), not a board ExamSeries. Board series
+  // remain separate and are viewed on the Exam Dates page.
+  const nextExam = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return (exams || [])
+      .filter((e) => e.exam_date && e.exam_date >= today)
+      .sort((a, b) => String(a.exam_date).localeCompare(String(b.exam_date)))[0] || null;
+  }, [exams]);
+
   const examDaysLeft = useMemo(() => {
-    if (!nextExam?.start_date) return null;
-    const start = new Date(`${nextExam.start_date}T00:00:00`);
+    if (!nextExam?.exam_date) return null;
+    const start = new Date(`${nextExam.exam_date}T00:00:00`);
     const today = new Date(); today.setHours(0, 0, 0, 0);
     return Math.max(0, Math.round((start.getTime() - today.getTime()) / 86400000));
   }, [nextExam]);
-
-  // Supplementary priority data: next upcoming exam series for the learner's
-  // board (public registry). Read-only; failure never blocks the dashboard.
-  useEffect(() => {
-    if (!profile?.board_id) { setNextExam(null); return undefined; }
-    let cancelled = false;
-    (async () => {
-      try {
-        const series = await base44.entities.ExamSeries.filter(
-          { board_id: profile.board_id, active: true }, "start_date", 30
-        );
-        const today = new Date().toISOString().slice(0, 10);
-        const upcoming = (series || [])
-          .filter((e) => e.start_date && e.start_date >= today)
-          .sort((a, b) => String(a.start_date).localeCompare(String(b.start_date)))[0] || null;
-        if (!cancelled) setNextExam(upcoming);
-      } catch {
-        if (!cancelled) setNextExam(null);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [profile?.board_id]);
 
   // Supplementary priority data: open task summary (deterministic counts only).
   useEffect(() => {
@@ -215,17 +201,18 @@ export default function Dashboard() {
             <div className="eyebrow">Next exam</div>
             {nextExam ? (
               <>
-                <div className="mt-2 text-[14px] font-semibold text-foreground truncate">{nextExam.exam_series}{nextExam.year ? ` ${nextExam.year}` : ""}</div>
+                <div className="mt-2 text-[14px] font-semibold text-foreground truncate">{nextExam.title}</div>
                 <div className="mt-1 flex items-baseline gap-1.5">
                   <span className="font-display text-3xl font-semibold text-foreground">{examDaysLeft}</span>
                   <span className="text-[11px] text-muted-foreground">days remaining</span>
                 </div>
+                <div className="mt-1 text-[10px] text-muted-foreground">{new Date(`${nextExam.exam_date}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</div>
               </>
             ) : (
               <>
                 <p className="mt-2 text-[13px] text-muted-foreground">No exams yet</p>
-                <Link to="/exam-dates" className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-primary hover:opacity-80">
-                  <CalendarClock className="w-3.5 h-3.5" /> Add exam dates
+                <Link to="/tool/exampilot" className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-primary hover:opacity-80">
+                  <CalendarClock className="w-3.5 h-3.5" /> Add an exam
                 </Link>
               </>
             )}

@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { enforceAIQuota } from '../../shared/aiGuard.ts';
+import { buildLearnerContext, AI_FACT_RULE } from '../../shared/learnerContext.ts';
 
 export default async function(req) {
   try {
@@ -15,8 +16,11 @@ export default async function(req) {
     const question = (body.question || '').trim();
     if (!transcript || !question) return Response.json({ error: 'Transcript and question are required' }, { status: 400 });
 
+    const ctx = await buildLearnerContext(base44);
     const excerpt = transcript.slice(0, 12000);
     const prompt = `You are LectureMind. Answer the student's question based ONLY on this lecture transcript. If the answer isn't in the transcript, say so plainly. Reference the relevant part.
+
+${ctx.contextText ? `Learner context:\n${ctx.contextText}\n\n` : ''}${AI_FACT_RULE}
 
 Transcript:
 ${excerpt}
@@ -39,6 +43,6 @@ Return JSON: { answer (string), source_snippet (the relevant passage from the tr
 
     return Response.json({ answer: result.answer || "", source_snippet: result.source_snippet || "" });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: 'Could not answer that right now.' }, { status: 500 });
   }
 }
