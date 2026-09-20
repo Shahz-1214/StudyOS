@@ -47,6 +47,8 @@ export default function Profile() {
         color: preset?.color || "#3B82F6",
         order_index: subjects.length,
         mastery_estimate: 0,
+        learner_profile_id: profile.id,
+        archived: false,
       });
       const conceptNames = preset?.concepts || [];
       if (conceptNames.length) {
@@ -57,6 +59,7 @@ export default function Profile() {
             importance: Math.round((1 - i / conceptNames.length) * 100) / 100,
             mastery: 0,
             status: "developing",
+            archived: false,
           }))
         );
       }
@@ -89,6 +92,7 @@ export default function Profile() {
         importance: 0.5,
         mastery: 0,
         status: "developing",
+        archived: false,
       });
       setNewConcept((s) => ({ ...s, [subjectId]: "" }));
       await reload();
