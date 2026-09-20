@@ -31,7 +31,21 @@ export function useStudyOSData() {
       const canonical = [...profiles].filter((p) => !p.archived).sort((a, b) => { const completed = Number(!!b.onboarding_completed) - Number(!!a.onboarding_completed); return completed || String(a.created_date || "").localeCompare(String(b.created_date || "")); })[0] || null;
       const activeSubjects = canonical ? await base44.entities.Subject.filter({ learner_profile_id: canonical.id, archived: false }, "order_index", 100) : [];
       const activeSubjectIds = new Set(activeSubjects.map((s) => s.id));
-      setProfile(canonical);
+      let activeProfile = canonical;
+      if (canonical) {
+        const today = new Date().toISOString().slice(0, 10);
+        const last = canonical.last_active_date || "";
+        let streak = Number(canonical.streak || 0);
+        if (last !== today) {
+          const prev = last ? new Date(`${last}T00:00:00Z`) : null;
+          const nowDay = new Date(`${today}T00:00:00Z`);
+          const diff = prev ? Math.round((nowDay - prev) / 86400000) : null;
+          streak = diff === 1 ? streak + 1 : 1;
+          activeProfile = { ...canonical, streak, last_active_date: today };
+          await base44.entities.LearnerProfile.update(canonical.id, { streak, last_active_date: today });
+        }
+      }
+      setProfile(activeProfile);
       setSubjects(activeSubjects);
       setConcepts(cons.filter((c) => !c.archived && activeSubjectIds.has(c.subject_id)));
       setEvents(evs);
