@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { base44 } from "@/api/base44Client";
@@ -10,7 +10,8 @@ import { Loader2, GraduationCap, AlertTriangle, Lightbulb, ChevronRight, BookOpe
 export default function Homework() {
   const { user } = useAuth();
   const { profile, loading } = useStudyOSData();
-  const [problem, setProblem] = useState("");
+  const location = useLocation();
+  const [problem, setProblem] = useState(() => location.state?.problem || "");
   const [hints, setHints] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
