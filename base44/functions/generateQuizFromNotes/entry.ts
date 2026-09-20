@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { enforceAIQuota } from '../../shared/aiGuard.ts';
 import { quizQuestionsSchema, sanitizeQuestions } from '../../shared/quizQuestions.ts';
 
 export default async function(req) {
@@ -6,6 +7,9 @@ export default async function(req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const guard = await enforceAIQuota(base44);
+    if (guard) return guard;
 
     const body = await req.json();
     const notes = (body.notes || '').trim();
