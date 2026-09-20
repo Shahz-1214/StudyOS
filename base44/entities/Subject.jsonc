@@ -16,6 +16,13 @@
     "mastery_estimate": {
       "type": "number",
       "default": 0
+    },
+    "learner_profile_id": {
+      "type": "string"
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [
