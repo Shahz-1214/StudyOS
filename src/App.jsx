@@ -2,7 +2,6 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
-import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
@@ -18,6 +17,10 @@ import Profile from '@/pages/Profile';
 import Progress from '@/pages/Progress';
 import ComingSoon from '@/pages/ComingSoon';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import NotFound from '@/pages/errors/NotFound';
+import AccessDenied from '@/pages/errors/AccessDenied';
+import AuthRequired from '@/pages/errors/AuthRequired';
+import OfflineGate from '@/components/errors/OfflineGate';
 import AuthLoadingScreen from '@/components/AuthLoadingScreen';
 import Practice from '@/pages/Practice';
 import StudyLens from '@/pages/StudyLens';
@@ -43,7 +46,7 @@ import CookiePolicy from '@/pages/CookiePolicy';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
-  const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/privacy", "/terms", "/cookies"];
+  const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/privacy", "/terms", "/cookies", "/error/401", "/error/403"];
   const isPublicRoute = publicRoutes.includes(location.pathname);
   const protectedPrefixes = ["/tool/", "/practice", "/past-papers", "/exam-dates", "/subject-hub", "/exam-vault", "/help", "/subscription", "/onboarding", "/progress", "/profile"];
   const isProtectedRoute = location.pathname === "/" || protectedPrefixes.some((prefix) => location.pathname.startsWith(prefix));
@@ -67,7 +70,8 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <Routes>
+    <OfflineGate>
+      <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -75,6 +79,8 @@ const AuthenticatedApp = () => {
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsConditions />} />
       <Route path="/cookies" element={<CookiePolicy />} />
+      <Route path="/error/401" element={<AuthRequired />} />
+      <Route path="/error/403" element={<AccessDenied />} />
       <Route element={<Layout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/practice" element={<Practice />} />
@@ -99,8 +105,9 @@ const AuthenticatedApp = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/tool/:featureId" element={<ComingSoon />} />
       </Route>
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+      <Route path="*" element={<NotFound />} />
+      </Routes>
+    </OfflineGate>
   );
 };
 
