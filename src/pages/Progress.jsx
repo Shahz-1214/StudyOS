@@ -7,7 +7,8 @@ import { computeSubjectMastery, computeConceptStatus, STATUS_LABELS, statusColor
 import StudyPanel from "@/components/StudyPanel";
 import MasteryBar from "@/components/MasteryBar";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { Loader2, TrendingUp, AlertTriangle } from "lucide-react";
+import PageSkeleton from "@/components/PageSkeleton";
+import { TrendingUp, AlertTriangle } from "lucide-react";
 
 export default function Progress() {
   const { user } = useAuth();
@@ -34,7 +35,7 @@ export default function Progress() {
   const weakCount = concepts.filter((c) => (c.mastery || 0) < 55).length;
   const masteredCount = concepts.filter((c) => (c.mastery || 0) >= 90).length;
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  if (loading) return <PageSkeleton />;
   if (!user) return <Navigate to="/" replace />;
   if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 

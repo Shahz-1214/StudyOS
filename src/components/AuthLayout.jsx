@@ -17,10 +17,10 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
           <div className="brand-wordmark mb-2 text-3xl font-semibold text-white">StudyOS</div>
           <div className="mb-3 text-[9px] font-medium uppercase tracking-[0.3em] text-emerald-400/65">LEARN • PRACTICE • MASTER</div>
           <h1 className="text-3xl font-semibold tracking-tight text-white">{title}</h1>
-          {subtitle && <p className="mt-2 text-sm leading-6 text-white/50">{subtitle}</p>}
+          {subtitle && <p className="mt-2 text-sm leading-6 text-[#B4C0BA]">{subtitle}</p>}
         </div>
-        <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] p-6 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-8">{children}</div>
-        {footer && <p className="mt-6 text-center text-sm text-white/45">{footer}</p>}
+        <div className="overflow-hidden rounded-[28px] border border-[#293630] bg-[#18211E] p-6 shadow-2xl shadow-black/30 sm:p-8">{children}</div>
+        {footer && <p className="mt-6 text-center text-sm text-[#B4C0BA]">{footer}</p>}
         <AppFooter compact />
       </div>
     </div>

@@ -186,19 +186,19 @@ export default function Register() {
 
     return (
       <AuthLayout icon={Mail} title="Verify your email" subtitle={`Enter the code we sent to ${email}`}>
-        <div className="mb-6 rounded-2xl border border-blue-400/10 bg-blue-400/[0.04] p-4 text-sm text-white/60">
+        <div className="mb-6 rounded-2xl border border-[#293630] bg-[#18211E] p-4 text-sm text-[#B4C0BA]">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-400/10">
               <ShieldCheck className="h-5 w-5 text-blue-300" aria-hidden="true" />
             </div>
             <div>
-              <p className="font-semibold text-white/85">Email verification</p>
-              <p className="text-xs leading-5 text-white/40">This screen expires after 10 minutes and requires a fresh code after expiry.</p>
+              <p className="font-semibold text-white/90">Email verification</p>
+              <p className="text-xs leading-5 text-[#7F8C86]">This screen expires after 10 minutes and requires a fresh code after expiry.</p>
             </div>
           </div>
         </div>
 
-        {error && <div role="alert" className="mb-4 rounded-2xl border border-red-400/15 bg-red-400/[0.06] p-3.5 text-sm text-red-200">{error}</div>}
+        {error && <div role="alert" className="mb-4 rounded-2xl border border-[#EF6B73]/30 bg-[#241A1C] p-3.5 text-sm text-[#F5A9AD]">{error}</div>}
 
         <div className="mb-6 flex justify-center">
           <InputOTP
@@ -215,7 +215,7 @@ export default function Register() {
           </InputOTP>
         </div>
 
-        <div className="mb-5 text-center text-xs text-white/40">
+        <div className="mb-5 text-center text-xs text-[#7F8C86]">
           {otpRemaining ? `Code window: ${minutes}:${seconds}` : "Code window expired"}
         </div>
 
@@ -254,53 +254,53 @@ export default function Register() {
       }
     >
       <div className="mb-6 grid gap-3 sm:grid-cols-2">
-        <Button type="button" variant="outline" className="h-12 border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white" onClick={handleGoogle} disabled={loading}>
+        <Button type="button" variant="outline" className="h-12 border-[#293630] bg-[#1E2925] text-white hover:bg-[#232E29] hover:text-white" onClick={handleGoogle} disabled={loading}>
           <GoogleIcon className="mr-2 h-5 w-5" /> Google
         </Button>
-        <Button type="button" variant="outline" className="h-12 border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white" onClick={handleGitHub} disabled={loading}>
+        <Button type="button" variant="outline" className="h-12 border-[#293630] bg-[#1E2925] text-white hover:bg-[#232E29] hover:text-white" onClick={handleGitHub} disabled={loading}>
           <Github className="mr-2 h-5 w-5" /> GitHub
         </Button>
       </div>
 
       <div className="mb-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-white/10" />
-        <span className="text-[10px] uppercase tracking-[0.2em] text-white/30">standard sign up</span>
-        <div className="h-px flex-1 bg-white/10" />
+        <div className="h-px flex-1 bg-[#293630]" />
+        <span className="text-[10px] uppercase tracking-[0.2em] text-[#7F8C86]">standard sign up</span>
+        <div className="h-px flex-1 bg-[#293630]" />
       </div>
 
-      {error && <div role="alert" className="mb-4 rounded-2xl border border-red-400/15 bg-red-400/[0.06] p-3.5 text-sm text-red-200">{error}</div>}
-      {ageError && <div role="alert" className="mb-4 rounded-2xl border border-amber-300/15 bg-amber-300/[0.06] p-3.5 text-sm text-amber-100">{ageError}</div>}
+      {error && <div role="alert" className="mb-4 rounded-2xl border border-[#EF6B73]/30 bg-[#241A1C] p-3.5 text-sm text-[#F5A9AD]">{error}</div>}
+      {ageError && <div role="alert" className="mb-4 rounded-2xl border border-[#F2B84B]/30 bg-[#272118] p-3.5 text-sm text-[#F2CE8F]">{ageError}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-white/75">Email</Label>
+          <Label htmlFor="email" className="text-[#B4C0BA]">Email</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" aria-hidden="true" />
-            <Input id="email" type="email" autoComplete="email" autoFocus placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-12 border-white/10 bg-black/20 pl-10 text-white placeholder:text-white/25 focus-visible:ring-emerald-400/30" required disabled={loading} />
+            <Input id="email" type="email" autoComplete="email" autoFocus placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-12 border-[#314039] bg-[#0E1412] pl-10 text-white placeholder:text-[#718078] focus-visible:ring-emerald-400/30" required disabled={loading} />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="dob" className="text-white/75">Date of birth</Label>
+          <Label htmlFor="dob" className="text-[#B4C0BA]">Date of birth</Label>
           <div className="relative">
             <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" aria-hidden="true" />
             <Input id="dob" type="date" autoComplete="bday" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} max={new Date().toISOString().slice(0,10)} className="h-12 border-white/10 bg-black/20 pl-10 text-white focus-visible:ring-emerald-400/30" required disabled={loading} />
           </div>
-          <p className="text-[11px] text-white/30">StudyOS currently accepts accounts for ages 13 and above. Date of birth is used here for the eligibility check and is not sent to the authentication API.</p>
+          <p className="text-[11px] text-[#7F8C86]">StudyOS currently accepts accounts for ages 13 and above. Date of birth is used here for the eligibility check and is not sent to the authentication API.</p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-white/75">Password</Label>
+          <Label htmlFor="password" className="text-[#B4C0BA]">Password</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" aria-hidden="true" />
-            <Input id="password" type="password" autoComplete="new-password" placeholder="Create a strong password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-12 border-white/10 bg-black/20 pl-10 text-white placeholder:text-white/25 focus-visible:ring-emerald-400/30" required disabled={loading} />
+            <Input id="password" type="password" autoComplete="new-password" placeholder="Create a strong password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-12 border-[#314039] bg-[#0E1412] pl-10 text-white placeholder:text-[#718078] focus-visible:ring-emerald-400/30" required disabled={loading} />
           </div>
           <div className="grid grid-cols-5 gap-1" aria-label={`Password strength ${passwordScore} of 5`}>
             {[1,2,3,4,5].map((level) => (
-              <div key={level} className={`h-1.5 rounded-full transition-colors ${passwordScore >= level ? "bg-emerald-400" : "bg-white/10"}`} />
+              <div key={level} className={`h-1.5 rounded-full transition-colors ${passwordScore >= level ? "bg-emerald-400" : "bg-[#293630]"}`} />
             ))}
           </div>
-          <div className="grid gap-1 text-[10px] text-white/35 sm:grid-cols-2">
+          <div className="grid gap-1 text-[10px] text-[#7F8C86] sm:grid-cols-2">
             <span className={checks.length ? "text-emerald-300/80" : ""}>• 12+ characters</span>
             <span className={checks.upper ? "text-emerald-300/80" : ""}>• uppercase</span>
             <span className={checks.lower ? "text-emerald-300/80" : ""}>• lowercase</span>
@@ -310,14 +310,14 @@ export default function Register() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirm" className="text-white/75">Confirm password</Label>
+          <Label htmlFor="confirm" className="text-[#B4C0BA]">Confirm password</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" aria-hidden="true" />
-            <Input id="confirm" type="password" autoComplete="new-password" placeholder="Repeat your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-12 border-white/10 bg-black/20 pl-10 text-white placeholder:text-white/25 focus-visible:ring-emerald-400/30" required disabled={loading} />
+            <Input id="confirm" type="password" autoComplete="new-password" placeholder="Repeat your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-12 border-[#314039] bg-[#0E1412] pl-10 text-white placeholder:text-[#718078] focus-visible:ring-emerald-400/30" required disabled={loading} />
           </div>
         </div>
 
-        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.025] p-3.5">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[#293630] bg-[#18211E] p-3.5">
           <input
             type="checkbox"
             checked={termsAccepted}
@@ -326,7 +326,7 @@ export default function Register() {
             disabled={loading}
             required
           />
-          <span className="text-xs leading-5 text-white/50">
+          <span className="text-xs leading-5 text-[#B4C0BA]">
             I agree to the{" "}
             <Link to="/terms" className="font-medium text-emerald-400 hover:text-emerald-300" target="_blank" rel="noreferrer">Terms & Conditions</Link>
             {" "}and acknowledge the{" "}

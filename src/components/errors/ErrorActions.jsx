@@ -5,7 +5,7 @@ import { Home, ArrowLeft, RefreshCw } from "lucide-react";
 export const PRIMARY_BUTTON =
   "inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 text-sm font-semibold text-black transition hover:bg-emerald-300";
 export const SECONDARY_BUTTON =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-5 text-sm font-semibold text-white/80 transition hover:bg-white/[0.07]";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#293630] bg-[#1E2925] px-5 text-sm font-semibold text-white/90 transition hover:bg-[#232E29]";
 
 export function ErrorActions({ children }) {
   return <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:justify-center">{children}</div>;

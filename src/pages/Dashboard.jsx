@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navigate, Link, useNavigate } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { track, EVENTS } from "@/lib/analytics";
 import {
@@ -7,14 +8,22 @@ import {
   STATUS_LABELS, statusColor,
 } from "@/lib/learnerState";
 import { FEATURES } from "@/lib/features";
+import { subjectIcon } from "@/lib/subjectVisuals";
 import StudyPanel from "@/components/StudyPanel";
-import StatCard from "@/components/StatCard";
 import GlobalSearch from "@/components/GlobalSearch";
 import MasteryBar from "@/components/MasteryBar";
+import PageSkeleton from "@/components/PageSkeleton";
+import LoadError from "@/components/errors/LoadError";
 import {
-  Flame, Target, BookOpen, Brain, ArrowRight, Loader2, LogIn,
-  AlertTriangle, ChevronRight, Clock,
+  Flame, BookOpen, ArrowRight, LogIn, ChevronRight,
+  CalendarClock, ListTodo, Target, Plus, ScanLine, GraduationCap, FileText,
+  Headphones, PenLine, AlertCircle, CheckSquare, RefreshCw, Timer, Circle,
 } from "lucide-react";
+
+const FEATURE_ICONS = {
+  ScanLine, GraduationCap, FileText, Headphones, PenLine,
+  CalendarClock, AlertCircle, CheckSquare, RefreshCw, Timer,
+};
 
 function greeting() {
   const h = new Date().getHours();
@@ -36,6 +45,8 @@ const NOISE_EVENTS = new Set([
 export default function Dashboard() {
   const { user, profile, subjects, concepts, events, loading, error } = useStudyOSData();
   const navigate = useNavigate();
+  const [nextExam, setNextExam] = useState(null);
+  const [openTasks, setOpenTasks] = useState(null);
 
   const overallMastery = useMemo(() => {
     if (!concepts.length) return 0;
@@ -57,19 +68,63 @@ export default function Dashboard() {
     [events]
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const examDaysLeft = useMemo(() => {
+    if (!nextExam?.start_date) return null;
+    const start = new Date(`${nextExam.start_date}T00:00:00`);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return Math.max(0, Math.round((start.getTime() - today.getTime()) / 86400000));
+  }, [nextExam]);
+
+  // Supplementary priority data: next upcoming exam series for the learner's
+  // board (public registry). Read-only; failure never blocks the dashboard.
+  useEffect(() => {
+    if (!profile?.board_id) { setNextExam(null); return undefined; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const series = await base44.entities.ExamSeries.filter(
+          { board_id: profile.board_id, active: true }, "start_date", 30
+        );
+        const today = new Date().toISOString().slice(0, 10);
+        const upcoming = (series || [])
+          .filter((e) => e.start_date && e.start_date >= today)
+          .sort((a, b) => String(a.start_date).localeCompare(String(b.start_date)))[0] || null;
+        if (!cancelled) setNextExam(upcoming);
+      } catch {
+        if (!cancelled) setNextExam(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [profile?.board_id]);
+
+  // Supplementary priority data: open task summary (deterministic counts only).
+  useEffect(() => {
+    if (!user) { setOpenTasks(null); return undefined; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const [todo, doing] = await Promise.all([
+          base44.entities.Task.filter({ status: "todo" }, "-created_date", 100),
+          base44.entities.Task.filter({ status: "in_progress" }, "-created_date", 100),
+        ]);
+        const all = [...(todo || []), ...(doing || [])];
+        const today = new Date().toISOString().slice(0, 10);
+        const due = all.filter((t) => t.due_date && t.due_date <= today).length;
+        if (!cancelled) setOpenTasks({ dueToday: due, total: all.length });
+      } catch {
+        if (!cancelled) setOpenTasks(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  if (loading) return <PageSkeleton />;
 
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen px-6">
         <StudyPanel className="max-w-md p-8 text-center">
-          <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary grid place-items-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary grid place-items-center mx-auto mb-4">
             <LogIn className="w-6 h-6" />
           </div>
           <h1 className="text-xl font-bold text-foreground">Sign in to start StudyOS</h1>
@@ -92,15 +147,10 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen px-6">
-        <StudyPanel className="max-w-md p-8 text-center">
-          <AlertTriangle className="w-6 h-6 text-destructive mx-auto mb-3" />
-          <h1 className="text-lg font-bold text-foreground">Couldn't load your study data</h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            This may be a temporary connection issue. Try again in a moment — your saved data is still safe.
-          </p>
-        </StudyPanel>
-      </div>
+      <LoadError
+        message="This may be a temporary connection issue. Your saved data is still safe."
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
@@ -111,121 +161,182 @@ export default function Dashboard() {
   const firstName = (user?.full_name || user?.email || "there").split(" ")[0];
 
   return (
-    <div className="max-w-[1400px] mx-auto px-5 md:px-8 py-6 md:py-8">
-      {/* Top bar */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <div className="eyebrow">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mt-1">
-            {greeting()}, {firstName} 👋
-          </h1>
-        </div>
-        <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
-          <Flame className="w-4 h-4 text-amber-500" />
-          <span className="font-semibold text-foreground">{profile.streak || 0}</span>
-          <span>day streak</span>
-        </div>
+    <div className="max-w-[1400px] mx-auto px-5 md:px-8 py-6 md:py-8 space-y-6">
+      {/* Greeting */}
+      <div>
+        <div className="eyebrow">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
+        <h1 className="page-title mt-1.5 text-foreground">{greeting()}, {firstName}</h1>
+        <p className="page-subtitle">Here's what matters for your studies today.</p>
       </div>
 
       <GlobalSearch concepts={concepts} subjects={subjects} boardId={profile?.board_id} />
 
-      {/* Hero + priority */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4 mb-4">
-        <StudyPanel className="p-6 md:p-8">
-          <div className="eyebrow">Today's priority</div>
+      {/* Priority section: dominant focus card + supporting priority stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
+        <StudyPanel className="p-6 md:p-8 flex flex-col justify-center">
+          <div className="eyebrow">Today's focus</div>
           {recommendation ? (
             <>
-              <h2 className="text-xl md:text-2xl font-bold text-foreground mt-2">
+              <h2 className="font-display text-2xl md:text-3xl font-semibold text-foreground mt-2.5">
                 {recommendation.subject_name} — {recommendation.name}
               </h2>
-              <p className="text-sm text-muted-foreground mt-2 max-w-lg">
+              <p className="text-sm text-muted-foreground mt-2.5 max-w-lg leading-6">
                 {recommendation.mastery > 0
                   ? `Currently at ${recommendation.mastery}%. This is your highest-impact concept right now.`
                   : "You haven't practiced this yet — a great place to start building mastery."}
               </p>
-              <div className="flex flex-wrap gap-2 mt-5">
+              <div className="flex flex-wrap gap-2 mt-6">
                 <button
                   onClick={() => { track(EVENTS.RECOMMENDATION_CLICKED, {}); navigate("/practice"); }}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 hover:opacity-90"
                 >
                   Start session <ArrowRight className="w-4 h-4" />
                 </button>
-                <Link to="/tool/studylens" className="inline-flex items-center gap-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-4 py-2.5 hover:bg-secondary/70">
+                <Link to="/tool/studylens" className="inline-flex items-center gap-2 rounded-lg border border-border bg-elevated text-foreground text-sm font-semibold px-4 py-2.5 hover:bg-elevated-high">
                   Open StudyLens
                 </Link>
               </div>
             </>
           ) : (
             <>
-              <h2 className="text-xl font-bold text-foreground mt-2">Add a subject to begin</h2>
-              <p className="text-sm text-muted-foreground mt-2">Your dashboard adapts once you have subjects and concepts.</p>
-              <Link to="/profile" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5">
+              <h2 className="font-display text-2xl md:text-3xl font-semibold text-foreground mt-2.5">Add a subject to begin</h2>
+              <p className="text-sm text-muted-foreground mt-2.5 max-w-lg leading-6">
+                Your dashboard adapts once you have subjects and concepts.
+              </p>
+              <Link to="/profile" className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 hover:opacity-90 w-fit">
                 Manage subjects <ChevronRight className="w-4 h-4" />
               </Link>
             </>
           )}
         </StudyPanel>
 
-        <StudyPanel className="p-6 md:p-8 flex flex-col items-center justify-center">
-          <div className="eyebrow">Overall mastery</div>
-          <div className="relative w-36 h-36 my-3 grid place-items-center">
-            <svg viewBox="0 0 120 120" className="absolute inset-0 -rotate-90">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
-              <circle cx="60" cy="60" r="52" fill="none" stroke="hsl(var(--primary))" strokeWidth="8"
-                strokeLinecap="round" strokeDasharray={`${(overallMastery / 100) * 327} 327`} />
-            </svg>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-foreground leading-none">{overallMastery}%</div>
-              <div className="text-[10px] text-muted-foreground mt-1">{concepts.length} concepts</div>
-            </div>
-          </div>
-          <div className="text-[11px] text-muted-foreground text-center">
-            {concepts.length ? "Derived from your concept mastery" : "No practice data yet"}
-          </div>
-        </StudyPanel>
-      </div>
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <StatCard icon={Target} value={`${overallMastery}%`} label="Overall mastery" />
-        <StatCard icon={BookOpen} value={subjects.length} label="Subjects" />
-        <StatCard icon={Brain} value={concepts.length} label="Concepts tracked" />
-        <StatCard icon={Flame} value={profile.streak || 0} label="Day streak" />
-      </div>
-
-      {/* Two-column: academic health + weak concepts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        <StudyPanel className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-bold text-foreground">Academic health</h3>
-              <p className="text-xs text-muted-foreground">Subject mastery from your concept data</p>
-            </div>
-          </div>
-          <div className="space-y-4">
-            {subjects.length === 0 && <p className="text-sm text-muted-foreground">No subjects yet.</p>}
-            {subjects.map((s) => {
-              const m = computeSubjectMastery(concepts, s.id);
-              return (
-                <div key={s.id} className="grid grid-cols-[120px_1fr_40px] items-center gap-3">
-                  <span className="text-[13px] text-foreground truncate">{s.name}</span>
-                  <MasteryBar value={m} color={s.color || "#3B82F6"} />
-                  <span className="text-[12px] text-muted-foreground text-right">{m}%</span>
+        <div className="grid grid-cols-2 gap-4">
+          {/* Next exam */}
+          <StudyPanel className="p-5">
+            <div className="eyebrow">Next exam</div>
+            {nextExam ? (
+              <>
+                <div className="mt-2 text-[14px] font-semibold text-foreground truncate">{nextExam.exam_series}{nextExam.year ? ` ${nextExam.year}` : ""}</div>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span className="font-display text-3xl font-semibold text-foreground">{examDaysLeft}</span>
+                  <span className="text-[11px] text-muted-foreground">days remaining</span>
                 </div>
-              );
-            })}
-          </div>
-        </StudyPanel>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-[13px] text-muted-foreground">No exams yet</p>
+                <Link to="/exam-dates" className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-primary hover:opacity-80">
+                  <CalendarClock className="w-3.5 h-3.5" /> Add exam dates
+                </Link>
+              </>
+            )}
+          </StudyPanel>
 
-        <StudyPanel className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-bold text-foreground">Weakest concepts</h3>
-              <p className="text-xs text-muted-foreground">Where your effort should go next</p>
+          {/* Today */}
+          <StudyPanel className="p-5">
+            <div className="eyebrow">Today</div>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="font-display text-3xl font-semibold text-foreground">{openTasks ? openTasks.dueToday : "—"}</span>
+              <span className="text-[11px] text-muted-foreground">tasks due</span>
             </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {openTasks ? `${openTasks.total} open · ${profile.daily_study_minutes || 60} min planned` : `${profile.daily_study_minutes || 60} min planned`}
+            </p>
+          </StudyPanel>
+
+          {/* Streak */}
+          <StudyPanel className="p-5">
+            <div className="eyebrow">Streak</div>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="font-display text-3xl font-semibold text-foreground">{profile.streak || 0}</span>
+              <span className="text-[11px] text-muted-foreground">days</span>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">Keep it going today</p>
+          </StudyPanel>
+
+          {/* Mastery */}
+          <StudyPanel className="p-5">
+            <div className="eyebrow">Mastery</div>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="font-display text-3xl font-semibold text-foreground">{overallMastery}%</span>
+            </div>
+            <div className="mt-2.5"><MasteryBar value={overallMastery} color="hsl(var(--primary))" /></div>
+          </StudyPanel>
+        </div>
+      </div>
+
+      {/* Subjects */}
+      <section>
+        <div className="flex items-end justify-between mb-3">
+          <div>
+            <h2 className="font-display text-xl font-semibold text-foreground">Subjects</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{subjects.length} subjects · {concepts.length} concepts tracked</p>
           </div>
+          <Link to="/subject-hub" className="text-[12px] font-semibold text-primary hover:opacity-80 hidden sm:inline-flex items-center gap-1">
+            Subject Hub <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {subjects.length === 0 && (
+            <StudyPanel className="p-8 text-center sm:col-span-2 lg:col-span-3">
+              <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+                <BookOpen className="h-6 w-6" />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-foreground">No subjects yet</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground">Add your subjects and StudyOS adapts every module around them.</p>
+              <Link to="/profile" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 hover:opacity-90">
+                <Plus className="w-4 h-4" /> Add subjects
+              </Link>
+            </StudyPanel>
+          )}
+          {subjects.map((s) => {
+            const m = computeSubjectMastery(concepts, s.id);
+            const subjConcepts = concepts.filter((c) => c.subject_id === s.id);
+            const next = subjConcepts.length ? recommendNextConcept(subjConcepts, [s]) : null;
+            const Icon = subjectIcon(s.name);
+            const color = s.color || "#3B82F6";
+            return (
+              <StudyPanel key={s.id} className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl" style={{ backgroundColor: `${color}1A`, color }}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-[14px] font-semibold text-foreground">{s.name}</div>
+                    <div className="text-[11px] text-muted-foreground">{subjConcepts.length} concepts</div>
+                  </div>
+                  <span className="ml-auto font-display text-xl font-semibold text-foreground">{m}%</span>
+                </div>
+                <div className="mt-4"><MasteryBar value={m} color={color} /></div>
+                <div className="mt-4 flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-muted-foreground truncate">
+                    {next ? `Next: ${next.name}` : "Ready to practice"}
+                  </span>
+                  <Link to="/practice" className="inline-flex items-center gap-1 text-[12px] font-semibold text-primary hover:opacity-80 shrink-0">
+                    Practice <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </StudyPanel>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Two-column: weakest concepts + recent activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <StudyPanel className="p-6">
+          <h3 className="font-bold text-foreground">Weakest concepts</h3>
+          <p className="text-xs text-muted-foreground mt-0.5 mb-4">Where your effort should go next</p>
           <div className="space-y-3">
-            {weakConcepts.length === 0 && <p className="text-sm text-muted-foreground">No concepts yet.</p>}
+            {weakConcepts.length === 0 && (
+              <div className="py-2">
+                <p className="text-[13px] text-foreground font-medium">No practice history</p>
+                <p className="mt-1 text-[12px] text-muted-foreground">Complete your first quiz to start building your mastery history.</p>
+                <Link to="/practice" className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-elevated text-foreground text-[12px] font-semibold px-3.5 py-2 hover:bg-elevated-high">
+                  Start practicing <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )}
             {weakConcepts.map((c) => {
               const st = computeConceptStatus(c.mastery);
               const subj = subjects.find((s) => s.id === c.subject_id);
@@ -244,49 +355,56 @@ export default function Dashboard() {
             })}
           </div>
         </StudyPanel>
-      </div>
 
-      {/* Recent activity */}
-      <StudyPanel className="p-6 mb-4">
-        <h3 className="font-bold text-foreground mb-1">Recent activity</h3>
-        <p className="text-xs text-muted-foreground mb-4">Your academic graph, updating live</p>
-        <div className="space-y-3">
-          {activityEvents.length === 0 && <p className="text-sm text-muted-foreground">No activity yet.</p>}
-          {activityEvents.slice(0, 6).map((e) => (
-            <div key={e.id} className="flex items-start gap-3">
-              <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
-              <div className="min-w-0">
-                <div className="text-[13px] text-foreground">{e.event_name.replace(/_/g, " ")}</div>
-                <div className="text-[10px] text-muted-foreground">{new Date(e.occurred_at).toLocaleString()}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </StudyPanel>
-
-      {/* Quick actions */}
-      <div className="mt-2">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-foreground">Quick actions</h3>
-          <span className="text-[11px] text-muted-foreground">10 connected features</span>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {FEATURES.map((f) => (
-            <Link key={f.id} to={`/tool/${f.id}`} className="block">
-              <StudyPanel className="p-4 h-full hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between">
-                  <div className="w-8 h-8 rounded-md bg-primary/10 text-primary grid place-items-center">
-                    <Clock className="w-4 h-4" />
-                  </div>
-                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Stage {f.stage}</span>
+        <StudyPanel className="p-6">
+          <h3 className="font-bold text-foreground">Recent activity</h3>
+          <p className="text-xs text-muted-foreground mt-0.5 mb-4">Your academic graph, updating live</p>
+          <div className="space-y-3">
+            {activityEvents.length === 0 && <p className="text-sm text-muted-foreground">No activity yet.</p>}
+            {activityEvents.slice(0, 6).map((e) => (
+              <div key={e.id} className="flex items-start gap-3">
+                <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
+                <div className="min-w-0">
+                  <div className="text-[13px] text-foreground">{e.event_name.replace(/_/g, " ")}</div>
+                  <div className="text-[10px] text-muted-foreground">{new Date(e.occurred_at).toLocaleString()}</div>
                 </div>
-                <div className="mt-3 text-[13px] font-semibold text-foreground">{f.title}</div>
-                <div className="mt-1 text-[11px] text-muted-foreground line-clamp-2">{f.desc}</div>
-              </StudyPanel>
-            </Link>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        </StudyPanel>
       </div>
+
+      {/* StudyOS tools */}
+      <section>
+        <div className="flex items-end justify-between mb-3">
+          <div>
+            <h2 className="font-display text-xl font-semibold text-foreground">StudyOS tools</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">AI capabilities across your whole academic graph</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {FEATURES.map((f) => {
+            const Icon = FEATURE_ICONS[f.icon] || Circle;
+            return (
+              <Link key={f.id} to={`/tool/${f.id}`} className="block group">
+                <StudyPanel className="p-5 h-full transition-shadow hover:shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg" style={{ backgroundColor: `${f.accent}1A`, color: f.accent }}>
+                      <Icon className="h-[18px] w-[18px]" />
+                    </div>
+                    <div className="text-[14px] font-semibold text-foreground">{f.title}</div>
+                  </div>
+                  <p className="mt-3 text-[12px] leading-5 text-muted-foreground">{f.short}</p>
+                  <div className="mt-4 inline-flex items-center gap-1 text-[12px] font-semibold text-primary">
+                    Open
+                    <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                </StudyPanel>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }

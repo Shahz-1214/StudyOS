@@ -5,13 +5,14 @@ import StudyPanel from "@/components/StudyPanel";
 import MasteryBar from "@/components/MasteryBar";
 import VerifiedNotes from "@/components/resources/VerifiedNotes";
 import { computeConceptStatus, STATUS_LABELS, statusColor, computeSubjectMastery } from "@/lib/learnerState";
-import { Loader2, Layers, FileText, CalendarClock, Brain, BookOpen } from "lucide-react";
+import PageSkeleton from "@/components/PageSkeleton";
+import { Layers, FileText, CalendarClock, Brain, BookOpen } from "lucide-react";
 
 export default function SubjectHub() {
   const { user } = useAuth();
   const { profile, subjects, concepts, loading } = useStudyOSData();
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  if (loading) return <PageSkeleton />;
   if (!user) return <Navigate to="/" replace />;
   if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 

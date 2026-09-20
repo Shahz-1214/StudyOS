@@ -123,13 +123,13 @@ export default function Login() {
         </>
       }
     >
-      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-emerald-400/10 bg-emerald-400/[0.04] p-3.5">
+      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-[#293630] bg-[#18211E] p-3.5">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10">
           <ShieldCheck className="h-4 w-4 text-emerald-400" aria-hidden="true" />
         </div>
         <div>
-          <p className="text-xs font-semibold text-white/85">Protected sign-in</p>
-          <p className="mt-0.5 text-[11px] leading-5 text-white/45">Credentials are handled by Base44 authentication; StudyOS never stores your password in an app entity.</p>
+          <p className="text-xs font-semibold text-white/90">Protected sign-in</p>
+          <p className="mt-0.5 text-[11px] leading-5 text-[#B4C0BA]">Credentials are handled by Base44 authentication; StudyOS never stores your password in an app entity.</p>
         </div>
       </div>
 
@@ -137,7 +137,7 @@ export default function Login() {
         <Button
           type="button"
           variant="outline"
-          className="h-12 border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white"
+          className="h-12 border-[#293630] bg-[#1E2925] text-white hover:bg-[#232E29] hover:text-white"
           onClick={handleGoogle}
           disabled={loading}
         >
@@ -147,7 +147,7 @@ export default function Login() {
         <Button
           type="button"
           variant="outline"
-          className="h-12 border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white"
+          className="h-12 border-[#293630] bg-[#1E2925] text-white hover:bg-[#232E29] hover:text-white"
           onClick={handleGitHub}
           disabled={loading}
         >
@@ -157,23 +157,23 @@ export default function Login() {
       </div>
 
       <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-white/10" />
-        <span className="text-[10px] uppercase tracking-[0.2em] text-white/30">or</span>
-        <div className="h-px flex-1 bg-white/10" />
+        <div className="h-px flex-1 bg-[#293630]" />
+        <span className="text-[10px] uppercase tracking-[0.2em] text-[#7F8C86]">or</span>
+        <div className="h-px flex-1 bg-[#293630]" />
       </div>
 
       {error && (
-        <div role="alert" className="mb-4 rounded-2xl border border-red-400/15 bg-red-400/[0.06] p-3.5 text-sm text-red-200">
+        <div role="alert" className="mb-4 rounded-2xl border border-[#EF6B73]/30 bg-[#241A1C] p-3.5 text-sm text-[#F5A9AD]">
           {error}
           {rateState.locked && (
-            <div className="mt-1 text-xs text-red-200/65">Local safeguard: try again in {lockSeconds}s.</div>
+            <div className="mt-1 text-xs text-[#F5A9AD]/70">Local safeguard: try again in {lockSeconds}s.</div>
           )}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-white/75">Email</Label>
+          <Label htmlFor="email" className="text-[#B4C0BA]">Email</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" aria-hidden="true" />
             <Input
@@ -184,7 +184,7 @@ export default function Login() {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-12 border-white/10 bg-black/20 pl-10 text-white placeholder:text-white/25 focus-visible:ring-emerald-400/30"
+              className="h-12 border-[#314039] bg-[#0E1412] pl-10 text-white placeholder:text-[#718078] focus-visible:ring-emerald-400/30"
               required
               disabled={loading}
             />
@@ -193,7 +193,7 @@ export default function Login() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-white/75">Password</Label>
+            <Label htmlFor="password" className="text-[#B4C0BA]">Password</Label>
             <Link to="/forgot-password" className="text-xs font-medium text-emerald-400 hover:text-emerald-300">
               Forgot password?
             </Link>
@@ -207,7 +207,7 @@ export default function Login() {
               placeholder="Your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-12 border-white/10 bg-black/20 pl-10 text-white placeholder:text-white/25 focus-visible:ring-emerald-400/30"
+              className="h-12 border-[#314039] bg-[#0E1412] pl-10 text-white placeholder:text-[#718078] focus-visible:ring-emerald-400/30"
               required
               disabled={loading}
             />
@@ -230,7 +230,7 @@ export default function Login() {
           )}
         </Button>
 
-        <div className="pt-1 text-center text-[11px] text-white/30">
+        <div className="pt-1 text-center text-[11px] text-[#7F8C86]">
           {rateState.remaining} protected attempts available in this browser window.
         </div>
       </form>

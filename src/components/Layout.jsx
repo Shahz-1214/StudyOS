@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { STUDY_FEATURES, PLAN_FEATURES } from "@/lib/features";
 import AppFooter from "@/components/AppFooter";
 import PageErrorBoundary from "@/components/errors/PageErrorBoundary";
-import { Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine, CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain, AlertCircle, CreditCard, Settings, Layers, Archive, Sparkles, Search } from "lucide-react";
+import { Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine, CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain, AlertCircle, CreditCard, Settings, Layers, Archive, Search } from "lucide-react";
 
 const ICONS = { Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine, CalendarClock, CheckSquare, RefreshCw, Timer, Brain, AlertCircle, CreditCard, Settings, Layers, Archive };
 function NavIcon({ name, className = "" }) { const I = ICONS[name] || Circle; return <I className={className} strokeWidth={2} />; }
@@ -20,20 +20,20 @@ export default function Layout() {
   const initials = (user?.full_name || user?.email || "S").trim().charAt(0).toUpperCase();
   return (
     <div className="min-h-screen bg-background flex">
-      <aside className="hidden md:flex w-[272px] flex-col border-r border-white/[.07] bg-black/20 backdrop-blur-xl sticky top-0 h-screen">
-        <div className="px-5 py-5 border-b border-white/[.07]">
+      <aside className="hidden md:flex w-[272px] flex-col border-r border-border bg-card sticky top-0 h-screen">
+        <div className="px-5 py-5 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="relative grid h-10 w-10 place-items-center rounded-2xl border border-emerald-400/20 bg-emerald-400/[.08] shadow-lg shadow-emerald-500/10">
-              <Sparkles className="h-5 w-5 text-emerald-300" />
+            <div className="relative grid h-10 w-10 place-items-center rounded-2xl border border-primary/20 bg-primary/10">
+              <GraduationCap className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0">
               <div className="brand-wordmark text-[20px] font-semibold text-white">StudyOS</div>
-              <div className="text-[9px] uppercase tracking-[.22em] text-white/35">your academic command center</div>
+              <div className="text-[9px] uppercase tracking-[.22em] text-muted-foreground">your academic command center</div>
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/[.06] bg-white/[.025] px-3 py-2 text-[11px] text-white/45">
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-elevated px-3 py-2 text-[11px] text-muted-foreground">
             <Search className="h-3.5 w-3.5" /> Find anything in StudyOS
-            <span className="ml-auto rounded-md border border-white/10 px-1.5 py-0.5 font-mono text-[9px] text-white/25">⌘K</span>
+            <span className="ml-auto rounded-md border border-border px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">⌘K</span>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-4">
@@ -49,25 +49,25 @@ export default function Layout() {
           <NavLink to="/subscription" className={({isActive}) => "nav-link " + (isActive ? "active" : "")}><CreditCard className="h-4 w-4" /><span>Subscription</span></NavLink>
           <NavLink to="/help" className={({isActive}) => "nav-link " + (isActive ? "active" : "")}><Circle className="h-4 w-4" /><span>Help & support</span></NavLink>
         </nav>
-        <div className="border-t border-white/[.07] p-3">
-          <NavLink to="/profile" className="flex items-center gap-3 rounded-2xl border border-transparent bg-white/[.025] px-3 py-2.5 hover:border-white/[.08] hover:bg-white/[.05]">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-400/10 text-sm font-semibold text-emerald-300">{initials}</div>
-            <div className="min-w-0"><div className="truncate text-xs font-semibold text-white/90">{user?.full_name || user?.email || "Student"}</div><div className="text-[10px] text-white/35">Open your profile</div></div>
+        <div className="border-t border-border p-3">
+          <NavLink to="/profile" className="flex items-center gap-3 rounded-2xl border border-transparent bg-elevated px-3 py-2.5 hover:border-border hover:bg-elevated-high">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-sm font-semibold text-primary">{initials}</div>
+            <div className="min-w-0"><div className="truncate text-xs font-semibold text-foreground">{user?.full_name || user?.email || "Student"}</div><div className="text-[10px] text-muted-foreground">Open your profile</div></div>
           </NavLink>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-white/[.06] bg-background/75 px-4 py-3 backdrop-blur-xl md:hidden">
+        <header className="sticky top-0 z-30 border-b border-border bg-background px-4 py-3 md:hidden">
           <div className="flex items-center justify-between">
-            <div className="brand-wordmark text-xl font-semibold text-white">StudyOS</div>
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-400/10 text-xs font-semibold text-emerald-300">{initials}</div>
+            <div className="brand-wordmark text-xl font-semibold text-foreground">StudyOS</div>
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary">{initials}</div>
           </div>
         </header>
         <main className="min-w-0 flex-1 pb-20 md:pb-0"><PageErrorBoundary><Outlet /></PageErrorBoundary></main>
         <AppFooter />
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-white/[.08] bg-black/75 px-2 py-2 backdrop-blur-xl md:hidden">
-        {PRIMARY_NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end} className={({isActive}) => "flex min-w-[62px] flex-col items-center gap-1 rounded-xl px-3 py-1.5 " + (isActive ? "bg-emerald-400/10 text-emerald-300" : "text-white/40")}><NavIcon name={n.icon} className="h-5 w-5" /><span className="text-[10px]">{n.label}</span></NavLink>)}
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-border bg-background/95 px-2 py-2 backdrop-blur-xl md:hidden">
+        {PRIMARY_NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end} className={({isActive}) => "flex min-w-[62px] flex-col items-center gap-1 rounded-xl px-3 py-1.5 " + (isActive ? "bg-primary/10 text-primary" : "text-muted-foreground")}><NavIcon name={n.icon} className="h-5 w-5" /><span className="text-[10px]">{n.label}</span></NavLink>)}
       </nav>
     </div>
   );

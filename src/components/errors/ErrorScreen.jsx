@@ -29,7 +29,7 @@ export default function ErrorScreen({ icon: Icon, eyebrow, code, title, message,
             LEARN • PRACTICE • MASTER
           </div>
         </div>
-        <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] p-6 text-center shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-8">
+        <div className="overflow-hidden rounded-[28px] border border-[#293630] bg-[#121816] p-6 text-center shadow-2xl shadow-black/30 sm:p-8">
           {eyebrow && (
             <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-white/40">{eyebrow}</p>
           )}

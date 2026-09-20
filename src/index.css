@@ -6,30 +6,33 @@
 
 @layer base {
   :root {
-    --background: 222 24% 5%;
-    --foreground: 210 20% 96%;
-    --card: 222 20% 8%;
-    --card-foreground: 210 20% 96%;
-    --popover: 222 20% 9%;
-    --popover-foreground: 210 20% 96%;
-    --primary: 151 76% 52%;
-    --primary-foreground: 222 30% 5%;
-    --secondary: 220 17% 13%;
-    --secondary-foreground: 210 20% 96%;
-    --muted: 220 17% 13%;
-    --muted-foreground: 215 12% 62%;
-    --accent: 151 76% 52%;
-    --accent-foreground: 222 30% 5%;
-    --destructive: 0 72% 58%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 16% 17%;
-    --input: 220 16% 15%;
-    --ring: 151 76% 52%;
-    --chart-1: 151 76% 52%;
-    --chart-2: 195 75% 56%;
-    --chart-3: 42 90% 60%;
-    --chart-4: 276 72% 66%;
-    --chart-5: 340 78% 62%;
+    --background: 160 15% 5%;
+    --foreground: 140 12% 96%;
+    --card: 162 14% 8%;
+    --card-foreground: 140 12% 96%;
+    --popover: 160 15% 11%;
+    --popover-foreground: 140 12% 96%;
+    --primary: 155 64% 55%;
+    --primary-foreground: 160 15% 5%;
+    --secondary: 160 16% 15%;
+    --secondary-foreground: 140 12% 96%;
+    --muted: 163 16% 11%;
+    --muted-foreground: 160 6% 54%;
+    --accent: 217 100% 65%;
+    --accent-foreground: 160 15% 5%;
+    --destructive: 356 81% 68%;
+    --destructive-foreground: 160 15% 5%;
+    --border: 160 12% 18%;
+    --input: 160 14% 21%;
+    --ring: 155 64% 55%;
+    --elevated: 163 16% 11%;
+    --elevated-high: 160 16% 15%;
+    --field: 163 16% 7%;
+    --chart-1: 155 64% 55%;
+    --chart-2: 217 100% 65%;
+    --chart-3: 39 87% 62%;
+    --chart-4: 255 83% 74%;
+    --chart-5: 335 71% 69%;
     --radius: 1rem;
     --font-display: "Rosemary", Georgia, "Times New Roman", serif;
     --font-heading: "Rosemary", Georgia, "Times New Roman", serif;
@@ -37,23 +40,28 @@
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   }
   .dark {
-    --background: 222 24% 5%;
-    --foreground: 210 20% 96%;
-    --card: 222 20% 8%;
-    --card-foreground: 210 20% 96%;
-    --popover: 222 20% 9%;
-    --popover-foreground: 210 20% 96%;
-    --primary: 151 76% 52%;
-    --primary-foreground: 222 30% 5%;
-    --secondary: 220 17% 13%;
-    --secondary-foreground: 210 20% 96%;
-    --muted: 220 17% 13%;
-    --muted-foreground: 215 12% 62%;
-    --accent: 151 76% 52%;
-    --accent-foreground: 222 30% 5%;
-    --border: 220 16% 17%;
-    --input: 220 16% 15%;
-    --ring: 151 76% 52%;
+    --background: 160 15% 5%;
+    --foreground: 140 12% 96%;
+    --card: 162 14% 8%;
+    --card-foreground: 140 12% 96%;
+    --popover: 160 15% 11%;
+    --popover-foreground: 140 12% 96%;
+    --primary: 155 64% 55%;
+    --primary-foreground: 160 15% 5%;
+    --secondary: 160 16% 15%;
+    --secondary-foreground: 140 12% 96%;
+    --muted: 163 16% 11%;
+    --muted-foreground: 160 6% 54%;
+    --accent: 217 100% 65%;
+    --accent-foreground: 160 15% 5%;
+    --destructive: 356 81% 68%;
+    --destructive-foreground: 160 15% 5%;
+    --border: 160 12% 18%;
+    --input: 160 14% 21%;
+    --ring: 155 64% 55%;
+    --elevated: 163 16% 11%;
+    --elevated-high: 160 16% 15%;
+    --field: 163 16% 7%;
   }
 }
 @layer base {
@@ -62,22 +70,33 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
-    background-image: radial-gradient(circle at 75% -10%, hsl(151 76% 52% / .09), transparent 30rem), radial-gradient(circle at 5% 20%, hsl(195 75% 56% / .055), transparent 26rem);
+    background-image: radial-gradient(circle at 85% -10%, hsl(155 64% 55% / .05), transparent 32rem), radial-gradient(circle at 0% 90%, hsl(217 100% 65% / .04), transparent 28rem);
+    background-attachment: fixed;
   }
   h1,h2,h3,h4,h5,h6,.display-font,.brand-font { font-family: var(--font-display); letter-spacing: -0.025em; }
   button,input,textarea,select { font-family: var(--font-body); }
 }
 @layer components {
-  .study-panel { @apply rounded-2xl border bg-card/80 backdrop-blur-xl; border-color: hsl(var(--border)); box-shadow: 0 18px 60px hsl(222 30% 2% / .22); }
-  .study-panel:hover { border-color: hsl(var(--primary) / .22); }
+  /* Standard content card: SOLID surface, visible border, soft shadow. */
+  .study-panel { @apply rounded-2xl border bg-card; border-color: hsl(var(--border)); box-shadow: 0 1px 2px hsl(160 30% 3% / .4), 0 10px 30px hsl(160 40% 2% / .25); }
   .eyebrow { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .18em; color: hsl(var(--muted-foreground)); }
-  .nav-link { @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-muted-foreground transition-all duration-200; }
-  .nav-link:hover { @apply text-foreground bg-white/[.04]; transform: translateX(2px); }
-  .nav-link.active { @apply text-foreground; background: linear-gradient(90deg,hsl(var(--primary)/.13),transparent); box-shadow: inset 2px 0 0 hsl(var(--primary)), 0 0 28px hsl(var(--primary)/.05); }
+  .nav-link { @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-muted-foreground transition-colors duration-150; }
+  .nav-link:hover { @apply text-foreground bg-elevated; }
+  .nav-link.active { @apply text-foreground bg-primary/10; box-shadow: inset 2px 0 0 hsl(var(--primary)); }
   .page-shell { @apply mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8; }
   .page-title { @apply text-3xl sm:text-4xl font-semibold; }
   .page-subtitle { @apply mt-2 max-w-2xl text-sm leading-6 text-muted-foreground; }
   .brand-wordmark { font-family: var(--font-display); letter-spacing: -.04em; }
-  .soft-button { @apply rounded-xl border border-white/10 bg-white/[.045] transition-all hover:bg-white/[.08] hover:border-primary/25; }
+  .soft-button { @apply rounded-xl border border-border bg-elevated transition-colors duration-150 hover:bg-elevated-high; }
 }
 ::selection { background: hsl(var(--primary) / .25); color: white; }
+
+/* Accessibility: respect reduced-motion preferences globally. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

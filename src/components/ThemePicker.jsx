@@ -29,7 +29,7 @@ export default function ThemePicker() {
             {isActive && (
               <Check
                 className="absolute inset-0 m-auto w-4 h-4"
-                style={{ color: t.id === "slate" || t.id === "sand" ? "hsl(var(--primary))" : "hsl(var(--foreground))" }}
+                style={{ color: "hsl(var(--primary))" }}
               />
             )}
           </button>

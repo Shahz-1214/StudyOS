@@ -8,7 +8,7 @@ import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "@/components/errors/ErrorActio
 export default function LoadError({ message, onRetry }) {
   return (
     <div className="mx-auto w-full max-w-md px-5 py-12 text-white">
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-7 text-center shadow-2xl shadow-black/30 backdrop-blur-xl">
+      <div className="rounded-3xl border border-border bg-card p-7 text-center shadow-2xl shadow-black/30">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/[.06]">
           <AlertTriangle className="h-6 w-6 text-emerald-400" aria-hidden="true" />
         </div>

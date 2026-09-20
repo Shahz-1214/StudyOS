@@ -5,6 +5,7 @@ import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { base44 } from "@/api/base44Client";
 import { track, EVENTS } from "@/lib/analytics";
 import StudyPanel from "@/components/StudyPanel";
+import PageSkeleton from "@/components/PageSkeleton";
 import { Loader2, PenLine, Sparkles, AlertTriangle, FileText, CheckCircle2, ArrowUpRight, RotateCcw } from "lucide-react";
 
 const DIMENSIONS = [
@@ -26,7 +27,7 @@ export default function EssayCheck() {
 
   useEffect(() => { base44.entities.Essay.list("-created_date", 5).then(setPast).catch(() => {}); }, []);
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  if (loading) return <PageSkeleton />;
   if (!user) return <Navigate to="/" replace />;
   if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 

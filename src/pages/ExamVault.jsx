@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { base44 } from "@/api/base44Client";
 import StudyPanel from "@/components/StudyPanel";
+import PageSkeleton from "@/components/PageSkeleton";
 import { Loader2, Archive, Trash2, ExternalLink, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
 
 const TYPE_LABEL = {
@@ -49,7 +50,7 @@ export default function ExamVault() {
     } catch { /* ignore */ }
   }
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  if (loading) return <PageSkeleton />;
   if (!user) return <Navigate to="/" replace />;
   if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 
