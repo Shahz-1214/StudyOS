@@ -145,7 +145,7 @@ export default function StudyLens() {
             <Link to="/practice" className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold px-4 py-2.5 hover:opacity-90">
               Practice related <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link to="/tool/homework" className="inline-flex items-center gap-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-4 py-2.5 hover:bg-secondary/70">
+            <Link to="/tool/homework" state={{ problem: result.problem_summary || text }} className="inline-flex items-center gap-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-semibold px-4 py-2.5 hover:bg-secondary/70">
               Get homework help
             </Link>
           </div>
