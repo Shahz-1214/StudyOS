@@ -2,7 +2,6 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { useEntitlement } from "@/hooks/useEntitlement";
-import { track, EVENTS } from "@/lib/analytics";
 import StudyPanel from "@/components/StudyPanel";
 import { Loader2, CreditCard, Sparkles, Check, Zap, Crown, AlertTriangle } from "lucide-react";
 
