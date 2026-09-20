@@ -24,6 +24,11 @@ export default function StudyLens() {
   async function onFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+    if (!allowed.includes(file.type) || file.size > 10 * 1024 * 1024) {
+      setError("Use a JPG, PNG, WEBP, HEIC or HEIF image up to 10MB.");
+      return;
+    }
     setBusy(true); setError(null);
     try {
       const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
