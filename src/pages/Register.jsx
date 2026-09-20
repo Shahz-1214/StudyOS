@@ -284,7 +284,7 @@ export default function Register() {
           <Label htmlFor="dob" className="text-[#B4C0BA]">Date of birth</Label>
           <div className="relative">
             <CalendarDays className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" aria-hidden="true" />
-            <Input id="dob" type="date" autoComplete="bday" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} max={new Date().toISOString().slice(0,10)} className="h-12 border-white/10 bg-black/20 pl-10 text-white focus-visible:ring-emerald-400/30" required disabled={loading} />
+            <Input id="dob" type="date" autoComplete="bday" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} max={new Date().toISOString().slice(0,10)} className="h-12 border-[#314039] bg-[#0E1412] pl-10 text-white placeholder:text-[#718078] focus-visible:ring-emerald-400/30" required disabled={loading} />
           </div>
           <p className="text-[11px] text-[#7F8C86]">StudyOS currently accepts accounts for ages 13 and above. Date of birth is used here for the eligibility check and is not sent to the authentication API.</p>
         </div>

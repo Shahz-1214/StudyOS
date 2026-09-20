@@ -9,7 +9,7 @@ export default function AuthUnavailable({ offline = false, message }) {
       <main className="flex-1 grid place-items-center px-5 py-12">
         <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[#293630] bg-[#18211E] p-7 text-center shadow-2xl shadow-black/30">
           <div className="absolute -right-16 -top-16 h-36 w-36 rounded-full bg-blue-500/10 blur-3xl" />
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#293630] bg-[#1E2925]">
             {offline ? (
               <WifiOff className="h-7 w-7 text-emerald-400" aria-hidden="true" />
             ) : (
