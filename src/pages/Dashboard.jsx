@@ -14,9 +14,8 @@ import GlobalSearch from "@/components/GlobalSearch";
 import MasteryBar from "@/components/MasteryBar";
 import PageSkeleton from "@/components/PageSkeleton";
 import LoadError from "@/components/errors/LoadError";
-import {
-  Flame, BookOpen, ArrowRight, LogIn, ChevronRight,
-  CalendarClock, ListTodo, Target, Plus, ScanLine, GraduationCap, FileText,
+import { BookOpen, ArrowRight, LogIn, ChevronRight,
+  CalendarClock, Plus, ScanLine, GraduationCap, FileText,
   Headphones, PenLine, AlertCircle, CheckSquare, RefreshCw, Timer, Circle,
 } from "lucide-react";
 
