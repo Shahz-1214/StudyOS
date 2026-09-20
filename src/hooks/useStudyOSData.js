@@ -39,7 +39,7 @@ export function useStudyOSData() {
         if (last !== today) {
           const prev = last ? new Date(`${last}T00:00:00Z`) : null;
           const nowDay = new Date(`${today}T00:00:00Z`);
-          const diff = prev ? Math.round((nowDay - prev) / 86400000) : null;
+          const diff = prev ? Math.round((nowDay.getTime() - prev.getTime()) / 86400000) : null;
           streak = diff === 1 ? streak + 1 : 1;
           activeProfile = { ...canonical, streak, last_active_date: today };
           await base44.entities.LearnerProfile.update(canonical.id, { streak, last_active_date: today });
