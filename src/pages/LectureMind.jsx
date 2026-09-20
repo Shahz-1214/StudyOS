@@ -31,6 +31,10 @@ export default function LectureMind() {
   async function onFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith("audio/") || file.size > 25 * 1024 * 1024) {
+      setError("Use an audio file up to 25MB.");
+      return;
+    }
     setBusy(true); setError(null);
     try {
       const { file_url } = await base44.integrations.Core.UploadPublicFile({ file });
