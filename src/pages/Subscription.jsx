@@ -18,20 +18,13 @@ const PLANS = [
 export default function Subscription() {
   const { user } = useAuth();
   const { profile, loading } = useStudyOSData();
-  const { entitlement, loading: entLoading, setPlan } = useEntitlement();
+  const { entitlement, loading: entLoading } = useEntitlement();
 
   if (loading || entLoading) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/" replace />;
   if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 
   const currentPlan = entitlement?.plan || "free";
-
-  async function choose(planId) {
-    if (planId === currentPlan) return;
-    track(planId === "free" ? EVENTS.SUBSCRIPTION_CANCELLED : EVENTS.SUBSCRIPTION_STARTED, { from: currentPlan, to: planId });
-    await setPlan(planId);
-    track(EVENTS.SUBSCRIPTION_VIEWED, { plan: planId });
-  }
 
   return (
     <div className="max-w-[920px] mx-auto px-5 md:px-8 py-6 md:py-8">
@@ -77,11 +70,11 @@ export default function Subscription() {
                 ))}
               </ul>
               <button
-                onClick={() => choose(p.id)}
-                disabled={isCurrent}
+                disabled
+                title="Purchases are not enabled yet"
                 className={`w-full rounded-lg text-sm font-semibold px-4 py-2.5 disabled:opacity-50 ${p.highlight ? "bg-primary text-primary-foreground hover:opacity-90" : "bg-secondary text-secondary-foreground hover:bg-secondary/70"}`}
               >
-                {isCurrent ? "Current plan" : p.id === "free" ? "Downgrade" : `Upgrade to ${p.name}`}
+                {isCurrent ? "Current plan" : "Purchases not enabled"}
               </button>
             </StudyPanel>
           );
@@ -89,7 +82,7 @@ export default function Subscription() {
       </div>
 
       <p className="text-[11px] text-muted-foreground mt-6 px-1">
-        Plan changes here update your SubscriptionState instantly for demo purposes. In production, the native Android/Galaxy client maps RevenueCat purchases to the same SubscriptionState entity — no app-side change needed.
+        Purchases are intentionally disabled until a verified payment provider is integrated. The app never grants paid entitlements from a client-side button.
       </p>
     </div>
   );
