@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
-const AI_EVENTS = ["studylens_used", "homework_started", "quiz_generated", "lecture_processed", "essay_analyzed", "exam_created", "weakness_updated"];
+const AI_EVENTS = ["ai_request_started", "studylens_used", "homework_started", "quiz_generated", "lecture_processed", "essay_analyzed", "exam_created", "weakness_updated"];
 const FREE_LIMIT = 15;
 
 export default async function(req) {
@@ -15,7 +15,8 @@ export default async function(req) {
     if (!sub) {
       sub = await base44.entities.SubscriptionState.create({ plan: "free", status: "active" });
     }
-    const isPro = sub.plan === "pro" || sub.plan === "elite";
+    const now = Date.now();
+    const isPro = (sub.plan === "pro" || sub.plan === "elite") && ["active", "trialing"].includes(sub.status) && (!sub.expires_at || new Date(sub.expires_at).getTime() > now);
 
     // Count today's AI usage from the Event log (user-scoped via RLS).
     const events = await base44.entities.Event.list("-occurred_at", 100);
