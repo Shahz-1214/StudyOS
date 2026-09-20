@@ -21,16 +21,5 @@ export function useEntitlement() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  const setPlan = useCallback(async (plan) => {
-    const subs = await base44.entities.SubscriptionState.list("-created_date", 1);
-    const expiresAt = plan === "free" ? null : new Date(Date.now() + 30 * 86400000).toISOString();
-    if (subs[0]) {
-      await base44.entities.SubscriptionState.update(subs[0].id, { plan, status: "active", expires_at: expiresAt });
-    } else {
-      await base44.entities.SubscriptionState.create({ plan, status: "active", expires_at: expiresAt });
-    }
-    await refresh();
-  }, [refresh]);
-
-  return { entitlement, loading, refresh, setPlan };
+  return { entitlement, loading, refresh };
 }
