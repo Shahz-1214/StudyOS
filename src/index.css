@@ -2,107 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @layer base {
   :root {
-    /* Alabaster Workspace — flat #FAF9F6 background, #F1F5F9 cards, slate #1E293B ink, #3B82F6 accent */
-    --background: 40 27% 97%;
-    --foreground: 217 33% 18%;
-    --card: 210 40% 96%;
-    --card-foreground: 217 33% 18%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 217 33% 18%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 214 32% 91%;
-    --secondary-foreground: 217 33% 18%;
-    --muted: 214 32% 91%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --background: 222 24% 5%;
+    --foreground: 210 20% 96%;
+    --card: 222 20% 8%;
+    --card-foreground: 210 20% 96%;
+    --popover: 222 20% 9%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 151 76% 52%;
+    --primary-foreground: 222 30% 5%;
+    --secondary: 220 17% 13%;
+    --secondary-foreground: 210 20% 96%;
+    --muted: 220 17% 13%;
+    --muted-foreground: 215 12% 62%;
+    --accent: 151 76% 52%;
+    --accent-foreground: 222 30% 5%;
+    --destructive: 0 72% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 215 25% 80%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
-    --chart-1: 217 91% 60%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --radius: 0.5rem;
-    --font-heading: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
-    --font-body: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    --font-display: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+    --border: 220 16% 17%;
+    --input: 220 16% 15%;
+    --ring: 151 76% 52%;
+    --chart-1: 151 76% 52%;
+    --chart-2: 195 75% 56%;
+    --chart-3: 42 90% 60%;
+    --chart-4: 276 72% 66%;
+    --chart-5: 340 78% 62%;
+    --radius: 1rem;
+    --font-display: "Rosemary", Georgia, "Times New Roman", serif;
+    --font-heading: "Rosemary", Georgia, "Times New Roman", serif;
+    --font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   }
-
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 96%;
-    --card: 222 40% 9%;
-    --card-foreground: 210 40% 96%;
-    --popover: 222 40% 9%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 217 33% 14%;
-    --secondary-foreground: 210 40% 96%;
-    --muted: 217 33% 14%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 217 33% 18%;
-    --input: 217 33% 18%;
-    --ring: 217 91% 60%;
+    --background: 222 24% 5%;
+    --foreground: 210 20% 96%;
+    --card: 222 20% 8%;
+    --card-foreground: 210 20% 96%;
+    --popover: 222 20% 9%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 151 76% 52%;
+    --primary-foreground: 222 30% 5%;
+    --secondary: 220 17% 13%;
+    --secondary-foreground: 210 20% 96%;
+    --muted: 220 17% 13%;
+    --muted-foreground: 215 12% 62%;
+    --accent: 151 76% 52%;
+    --accent-foreground: 222 30% 5%;
+    --border: 220 16% 17%;
+    --input: 220 16% 15%;
+    --ring: 151 76% 52%;
   }
 }
-
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
+  * { @apply border-border outline-ring/50; }
+  html { scroll-behavior: smooth; }
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
+    background-image: radial-gradient(circle at 75% -10%, hsl(151 76% 52% / .09), transparent 30rem), radial-gradient(circle at 5% 20%, hsl(195 75% 56% / .055), transparent 26rem);
   }
-
-  h1, h2, h3, h4, h5 {
-    font-family: var(--font-display);
-    letter-spacing: -0.02em;
-  }
+  h1,h2,h3,h4,h5,h6,.display-font,.brand-font { font-family: var(--font-display); letter-spacing: -0.025em; }
+  button,input,textarea,select { font-family: var(--font-body); }
 }
-
 @layer components {
-  /* Signature detail: micro-fine double border enclosing every study panel */
-  .study-panel {
-    background-color: hsl(var(--card));
-    border-radius: var(--radius);
-    box-shadow:
-      0 0 0 0.5px hsl(var(--border)),
-      inset 0 0 0 3px hsl(var(--card)),
-      inset 0 0 0 3.5px hsl(var(--border));
-  }
-
-  .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
-    color: hsl(var(--muted-foreground));
-  }
-
-  .nav-link {
-    @apply flex items-center gap-3 rounded-lg px-3 py-2 text-[13px] text-muted-foreground transition-colors;
-  }
-  .nav-link:hover {
-    @apply text-foreground bg-secondary/60;
-  }
-  .nav-link.active {
-    @apply text-foreground;
-    box-shadow: inset 2px 0 0 0 hsl(var(--primary));
-    background-color: hsl(var(--secondary) / 0.5);
-  }
+  .study-panel { @apply rounded-2xl border bg-card/80 backdrop-blur-xl; border-color: hsl(var(--border)); box-shadow: 0 18px 60px hsl(222 30% 2% / .22); }
+  .study-panel:hover { border-color: hsl(var(--primary) / .22); }
+  .eyebrow { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .18em; color: hsl(var(--muted-foreground)); }
+  .nav-link { @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-muted-foreground transition-all duration-200; }
+  .nav-link:hover { @apply text-foreground bg-white/[.04]; transform: translateX(2px); }
+  .nav-link.active { @apply text-foreground; background: linear-gradient(90deg,hsl(var(--primary)/.13),transparent); box-shadow: inset 2px 0 0 hsl(var(--primary)), 0 0 28px hsl(var(--primary)/.05); }
+  .page-shell { @apply mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8; }
+  .page-title { @apply text-3xl sm:text-4xl font-semibold; }
+  .page-subtitle { @apply mt-2 max-w-2xl text-sm leading-6 text-muted-foreground; }
+  .brand-wordmark { font-family: var(--font-display); letter-spacing: -.04em; }
+  .soft-button { @apply rounded-xl border border-white/10 bg-white/[.045] transition-all hover:bg-white/[.08] hover:border-primary/25; }
 }
+::selection { background: hsl(var(--primary) / .25); color: white; }
