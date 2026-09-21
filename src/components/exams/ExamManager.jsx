@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import StudyPanel from "@/components/StudyPanel";
-import { Plus, Trash2, Pencil, Check, X, CalendarClock, Archive } from "lucide-react";
+import { Plus, Pencil, Check, X, CalendarClock, Archive } from "lucide-react";
 
 const EXAM_TYPES = [
   { value: "board", label: "Board exam" },
