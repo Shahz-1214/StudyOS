@@ -25,7 +25,7 @@ export const privacyPolicy = {
       "StudyOS does not claim that AI inputs are never retained or used by every underlying provider. Provider terms, processing locations, retention and transfer arrangements require review before launch."
     ]},
     { heading: "Uploads and visibility", paragraphs: [
-      "The current StudyLens image and LectureMind audio upload flows use publicly accessible file URLs before processing. Anyone who obtains such a URL may be able to access the file. Do not upload confidential material, identifying images, or recordings without the rights and permission to do so.",
+      "StudyLens image and LectureMind audio uploads use Base44 private file storage. The application passes the private file reference to an authenticated backend function, which obtains a short-lived access URL only when an AI integration needs to read the file. Do not upload confidential material or another person's identifying material unless you have the authority and permissions required.",
       "Learner database records use account ownership rules, but those rules do not make a public file URL private. Private-upload remediation and any handling of earlier public files must be completed and verified before launch."
     ]},
     { heading: "Storage and retention", paragraphs: [
