@@ -41,7 +41,7 @@ export const privacyPolicy = {
     ]},
     { heading: "Children and international use", paragraphs: [
       "StudyOS currently requires users to be at least 13 years old. Users under 13 are not permitted to create or use StudyOS accounts. If the law applicable to a user requires parental or guardian authorization for a person aged 13 or older, that authorization remains required.",
-      "The intended audience may be worldwide. Applicable rights and duties depend on the operator's location, the learner's location, age, account model and local law. No single governing framework is asserted here."
+      "StudyOS may be accessible internationally. There is no single worldwide rule that makes age 13 sufficient for every legal purpose. Child-data, consent, consumer, contract and online-safety requirements can differ by jurisdiction. Where local law provides stronger protections or requires parental/guardian authorization, those requirements apply."
     ]},
     { heading: "Changes", paragraphs: [
       "This page will be updated when the implementation, operator details, service providers or legal requirements change. The update date above identifies this version."
