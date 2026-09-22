@@ -54,7 +54,7 @@ export const termsPolicy = {
   summary: "These terms describe the current pre-launch StudyOS service and the responsibilities that apply when it becomes available.",
   sections: [
     { heading: "Operator and status", paragraphs: [
-      "StudyOS is operated by an individual operator and is currently in pre-launch testing. Verified operator identity, location and a support or dispute contact will be added before public launch. These terms do not invent a company, address, governing law or court."
+      "StudyOS is operated by an individual operator and is currently in pre-launch testing. StudyOS is a personal project operated by Shahzaib and is not represented as an incorporated company. Support and privacy requests can be sent to studyos.appsupport@gmail.com. These terms do not invent a company, address, governing law or court."
     ]},
     { heading: "Accounts", paragraphs: [
       "Use accurate account information, keep sign-in credentials confidential, and notify the operator through the published support method if unauthorized access is suspected. Do not access another learner's account or attempt to bypass authentication, ownership rules, usage limits or service protections."
