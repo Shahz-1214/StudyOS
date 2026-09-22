@@ -253,11 +253,11 @@ export default function Register() {
         </>
       }
     >
-      <div className="mb-6 grid gap-3 sm:grid-cols-2">
-        <Button type="button" variant="outline" className="h-12 border-[#293630] bg-[#1E2925] text-white hover:bg-[#232E29] hover:text-white" onClick={handleGoogle} disabled={loading}>
+      <div className="mb-3 rounded-2xl border border-[#293630] bg-[#18211E] p-3 text-xs leading-5 text-[#B4C0BA]">StudyOS accounts are for users aged <strong className="text-white">13 and above</strong>. Select your date of birth below before using Google or GitHub sign-in.</div>\n\n      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+        <Button type="button" variant="outline" className="h-12 border-[#293630] bg-[#1E2925] text-white hover:bg-[#232E29] hover:text-white" onClick={handleGoogle} disabled={loading || !dateOfBirth || age < MINIMUM_AGE} title={!dateOfBirth || age < MINIMUM_AGE ? "Age 13+ is required" : undefined}>
           <GoogleIcon className="mr-2 h-5 w-5" /> Google
         </Button>
-        <Button type="button" variant="outline" className="h-12 border-[#293630] bg-[#1E2925] text-white hover:bg-[#232E29] hover:text-white" onClick={handleGitHub} disabled={loading}>
+        <Button type="button" variant="outline" className="h-12 border-[#293630] bg-[#1E2925] text-white hover:bg-[#232E29] hover:text-white" onClick={handleGitHub} disabled={loading || !dateOfBirth || age < MINIMUM_AGE} title={!dateOfBirth || age < MINIMUM_AGE ? "Age 13+ is required" : undefined}>
           <Github className="mr-2 h-5 w-5" /> GitHub
         </Button>
       </div>
