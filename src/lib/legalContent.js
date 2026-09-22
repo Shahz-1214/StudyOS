@@ -26,7 +26,7 @@ export const privacyPolicy = {
     ]},
     { heading: "Uploads and visibility", paragraphs: [
       "StudyLens image and LectureMind audio uploads use Base44 private file storage. The application passes the private file reference to an authenticated backend function, which obtains a short-lived access URL only when an AI integration needs to read the file. Do not upload confidential material or another person's identifying material unless you have the authority and permissions required.",
-      "Learner database records use account ownership rules, but those rules do not make a public file URL private. Private-upload remediation and any handling of earlier public files must be completed and verified before launch."
+      "Private storage reduces exposure, but no storage system can guarantee absolute security. Production access controls and deletion behavior should still be verified before launch."
     ]},
     { heading: "Storage and retention", paragraphs: [
       "Account and learning records remain until removed through an available feature or an approved operational process. Some tasks, subjects, concepts and saved papers can be deleted individually. StudyOS does not currently provide a verified account-wide export, deletion or automatic retention schedule.",
