@@ -84,7 +84,7 @@ export const termsPolicy = {
     ]},
     { heading: "Responsibility and disputes", paragraphs: [
       "Nothing here excludes rights or responsibilities that cannot lawfully be excluded. Any final limitation of liability, consumer terms, governing law and dispute process depends on the operator's verified location, the learner's location and the product model and requires qualified review.",
-      "A verified support and dispute contact will be added before public launch."
+      "Support and privacy requests can be sent to studyos.appsupport@gmail.com."
     ]},
     { heading: "Privacy and changes", paragraphs: [
       "The Privacy Policy and Cookie & Storage Policy explain current data and storage practices. These terms will be updated when operator details, eligibility, payments and launch procedures are finalized."
