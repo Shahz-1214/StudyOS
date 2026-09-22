@@ -56,6 +56,10 @@ export const termsPolicy = {
     { heading: "Operator and status", paragraphs: [
       "StudyOS is operated by an individual operator and is currently in pre-launch testing. StudyOS is a personal project operated by Shahzaib and is not represented as an incorporated company. Support and privacy requests can be sent to studyos.appsupport@gmail.com. These terms do not invent a company, address, governing law or court."
     ]},
+    { heading: "Age eligibility", paragraphs: [
+      "StudyOS currently permits accounts only for people aged 13 or older. People under 13 may not create or use an account. If the law applicable to you requires a parent or guardian to authorize your use at your age, you must obtain that authorization before using StudyOS.",
+      "Age 13 is a product eligibility rule, not a statement that every jurisdiction treats a 13-year-old as an adult or as independently able to consent to every form of data processing or contract. Stronger local requirements continue to apply."
+    ]},
     { heading: "Accounts", paragraphs: [
       "Use accurate account information, keep sign-in credentials confidential, and notify the operator through the published support method if unauthorized access is suspected. Do not access another learner's account or attempt to bypass authentication, ownership rules, usage limits or service protections."
     ]},
