@@ -4,14 +4,15 @@ import { base44 } from "@/api/base44Client";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { track, EVENTS } from "@/lib/analytics";
 import {
-  computeSubjectMastery, recommendNextConcept, computeConceptStatus,
-  STATUS_LABELS, statusColor,
+  computeSubjectMastery, recommendNextConcept,
 } from "@/lib/learnerState";
 import { FEATURES } from "@/lib/features";
 import { subjectIcon } from "@/lib/subjectVisuals";
 import StudyPanel from "@/components/StudyPanel";
 import GlobalSearch from "@/components/GlobalSearch";
 import MasteryBar from "@/components/MasteryBar";
+import ExamCountdown from "@/components/ExamCountdown";
+import DailyReminder from "@/components/DailyReminder";
 import PageSkeleton from "@/components/PageSkeleton";
 import LoadError from "@/components/errors/LoadError";
 import { BookOpen, ArrowRight, LogIn, ChevronRight,
@@ -31,18 +32,8 @@ function greeting() {
   return "Good evening";
 }
 
-// Telemetry/nav events that aren't real study activity — excluded from the
-// Recent activity feed so it shows only meaningful academic events.
-const NOISE_EVENTS = new Set([
-  "app_open",
-  "recommendation_clicked",
-  "subscription_viewed",
-  "subscription_started",
-  "subscription_cancelled",
-]);
-
 export default function Dashboard() {
-  const { user, profile, subjects, concepts, events, exams, loading, error } = useStudyOSData();
+  const { user, profile, subjects, concepts, exams, loading, error } = useStudyOSData();
   const navigate = useNavigate();
   const [openTasks, setOpenTasks] = useState(null);
 
@@ -56,16 +47,6 @@ export default function Dashboard() {
     [concepts, subjects]
   );
 
-  const weakConcepts = useMemo(
-    () => [...concepts].sort((a, b) => (a.mastery || 0) - (b.mastery || 0)).slice(0, 4),
-    [concepts]
-  );
-
-  const activityEvents = useMemo(
-    () => (events || []).filter((e) => !NOISE_EVENTS.has(e.event_name)),
-    [events]
-  );
-
   // Next PERSONAL exam (LearnerExam), not a board ExamSeries. Board series
   // remain separate and are viewed on the Exam Dates page.
   const nextExam = useMemo(() => {
@@ -74,13 +55,6 @@ export default function Dashboard() {
       .filter((e) => e.exam_date && e.exam_date >= today)
       .sort((a, b) => String(a.exam_date).localeCompare(String(b.exam_date)))[0] || null;
   }, [exams]);
-
-  const examDaysLeft = useMemo(() => {
-    if (!nextExam?.exam_date) return null;
-    const start = new Date(`${nextExam.exam_date}T00:00:00`);
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    return Math.max(0, Math.round((start.getTime() - today.getTime()) / 86400000));
-  }, [nextExam]);
 
   // Supplementary priority data: open task summary (deterministic counts only).
   useEffect(() => {
@@ -156,6 +130,8 @@ export default function Dashboard() {
 
       <GlobalSearch concepts={concepts} subjects={subjects} boardId={profile?.board_id} />
 
+      <DailyReminder concepts={concepts} openTasks={openTasks} />
+
       {/* Priority section: dominant focus card + supporting priority stats */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
         <StudyPanel className="p-6 md:p-8 flex flex-col justify-center">
@@ -202,10 +178,7 @@ export default function Dashboard() {
             {nextExam ? (
               <>
                 <div className="mt-2 text-[14px] font-semibold text-foreground truncate">{nextExam.title}</div>
-                <div className="mt-1 flex items-baseline gap-1.5">
-                  <span className="font-display text-3xl font-semibold text-foreground">{examDaysLeft}</span>
-                  <span className="text-[11px] text-muted-foreground">days remaining</span>
-                </div>
+                <ExamCountdown targetDate={nextExam.exam_date} />
                 <div className="mt-1 text-[10px] text-muted-foreground">{new Date(`${nextExam.exam_date}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</div>
               </>
             ) : (
@@ -307,58 +280,6 @@ export default function Dashboard() {
           })}
         </div>
       </section>
-
-      {/* Two-column: weakest concepts + recent activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <StudyPanel className="p-6">
-          <h3 className="font-bold text-foreground">Weakest concepts</h3>
-          <p className="text-xs text-muted-foreground mt-0.5 mb-4">Where your effort should go next</p>
-          <div className="space-y-3">
-            {weakConcepts.length === 0 && (
-              <div className="py-2">
-                <p className="text-[13px] text-foreground font-medium">No practice history</p>
-                <p className="mt-1 text-[12px] text-muted-foreground">Complete your first quiz to start building your mastery history.</p>
-                <Link to="/practice" className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-elevated text-foreground text-[12px] font-semibold px-3.5 py-2 hover:bg-elevated-high">
-                  Start practicing <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            )}
-            {weakConcepts.map((c) => {
-              const st = computeConceptStatus(c.mastery);
-              const subj = subjects.find((s) => s.id === c.subject_id);
-              return (
-                <div key={c.id} className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[13px] text-foreground truncate">{c.name}</div>
-                    <div className="text-[10px] text-muted-foreground">{subj?.name}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-semibold" style={{ color: statusColor(st) }}>{STATUS_LABELS[st]}</span>
-                    <span className="text-[12px] text-muted-foreground w-8 text-right">{c.mastery || 0}%</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </StudyPanel>
-
-        <StudyPanel className="p-6">
-          <h3 className="font-bold text-foreground">Recent activity</h3>
-          <p className="text-xs text-muted-foreground mt-0.5 mb-4">Your academic graph, updating live</p>
-          <div className="space-y-3">
-            {activityEvents.length === 0 && <p className="text-sm text-muted-foreground">No activity yet.</p>}
-            {activityEvents.slice(0, 6).map((e) => (
-              <div key={e.id} className="flex items-start gap-3">
-                <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
-                <div className="min-w-0">
-                  <div className="text-[13px] text-foreground">{e.event_name.replace(/_/g, " ")}</div>
-                  <div className="text-[10px] text-muted-foreground">{new Date(e.occurred_at).toLocaleString()}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </StudyPanel>
-      </div>
 
       {/* StudyOS tools */}
       <section>
