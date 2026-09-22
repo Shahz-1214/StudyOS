@@ -37,7 +37,7 @@ export const privacyPolicy = {
     ]},
     { heading: "Learner choices and rights", paragraphs: [
       "Learners can update profile information and remove certain records in the app. Depending on applicable law, a learner or guardian may have rights to ask for access, correction, deletion, restriction, objection, portability or information about processing.",
-      "A verified privacy-request contact and identity-verification procedure will be published before launch. Until then, StudyOS must not be treated as ready to accept public privacy requests or children's accounts."
+      "Privacy requests can be sent to studyos.appsupport@gmail.com. Identity verification may be requested where reasonably necessary to protect an account or another person's information."
     ]},
     { heading: "Children and international use", paragraphs: [
       "StudyOS is intended to support learners, including minors, but it does not yet implement a verified child, guardian or school authorization process. The appropriate eligibility wording, age-appropriate notices and safeguards must be settled before offering the service to children.",
