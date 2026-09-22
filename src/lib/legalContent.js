@@ -40,7 +40,7 @@ export const privacyPolicy = {
       "Privacy requests can be sent to studyos.appsupport@gmail.com. Identity verification may be requested where reasonably necessary to protect an account or another person's information."
     ]},
     { heading: "Children and international use", paragraphs: [
-      "StudyOS is intended to support learners, including minors, but it does not yet implement a verified child, guardian or school authorization process. The appropriate eligibility wording, age-appropriate notices and safeguards must be settled before offering the service to children.",
+      "StudyOS currently requires users to be at least 13 years old. Users under 13 are not permitted to create or use StudyOS accounts. If the law applicable to a user requires parental or guardian authorization for a person aged 13 or older, that authorization remains required.",
       "The intended audience may be worldwide. Applicable rights and duties depend on the operator's location, the learner's location, age, account model and local law. No single governing framework is asserted here."
     ]},
     { heading: "Changes", paragraphs: [
