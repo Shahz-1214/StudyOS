@@ -5,7 +5,7 @@ export const privacyPolicy = {
   summary: "This policy explains the information StudyOS currently handles, why it is used, and the choices available to learners.",
   sections: [
     { heading: "Operator and status", paragraphs: [
-      "StudyOS is operated by an individual operator and is currently in pre-launch testing. The operator's verified public name, establishment location, and privacy contact will be added before public launch.",
+      "StudyOS is a personal, independently developed project operated by Shahzaib. It is not presented as an incorporated company or registered business entity. Privacy and support requests can be sent to studyos.appsupport@gmail.com.",
       "This policy describes the current implementation. It is not a claim that StudyOS has been certified as compliant with every law in every country."
     ]},
     { heading: "Information StudyOS handles", paragraphs: [
