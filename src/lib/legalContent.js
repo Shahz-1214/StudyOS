@@ -1,4 +1,4 @@
-export const POLICY_UPDATED = "18 September 2026";
+export const POLICY_UPDATED = "22 September 2026";
 
 export const privacyPolicy = {
   title: "Privacy Policy",
