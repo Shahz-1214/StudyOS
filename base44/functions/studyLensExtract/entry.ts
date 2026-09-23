@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { enforceAIQuota } from '../../shared/aiGuard.ts';
-import { validateUploadedFile, createSignedFileUrl } from '../../shared/uploadSecurity.ts';
+import { validateUploadedFile, createSignedFileUrl, isTrustedScanRecord } from '../../shared/uploadSecurity.ts';
 import { buildLearnerContext, AI_FACT_RULE } from '../../shared/learnerContext.ts';
 
 export default async function(req) {
@@ -22,6 +22,17 @@ export default async function(req) {
     if (fileUri) {
       const v = validateUploadedFile('image', fileUri, declaredSize);
       if (!v.ok) return Response.json({ error: v.error, code: v.code }, { status: 400 });
+
+      // Fail closed: only the authenticated owner's CLEAN scan may unlock the file.
+      const scans = await base44.asServiceRole.entities.MediaSecurityScan.filter({
+        file_uri: fileUri,
+        owner_email: user.email,
+        status: 'clean',
+      });
+      if (!scans.some((s) => isTrustedScanRecord(s, user.email, fileUri))) {
+        return Response.json({ error: 'Security scan required before processing.', code: 'MEDIA_NOT_CLEAN' }, { status: 423 });
+      }
+
       imageUrl = await createSignedFileUrl(base44, fileUri, 180);
     }
 
