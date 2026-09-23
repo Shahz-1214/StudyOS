@@ -1,6 +1,10 @@
 // Server-side validation for learner-uploaded files.
 //
-// Architecture note (platform limitation): Base44's UploadPrivateFile stores
+// Security invariant: uploaded bytes are untrusted data, never application code.
+// They must pass the authenticated malware-scan gate before any AI/media
+// processor is allowed to read them.
+//
+// Architecture note: Base44's UploadPrivateFile stores
 // the file in app-private storage and returns a `file_uri`. True content
 // inspection / quarantine scanning of the stored bytes is not available in
 // the platform, so we enforce the strongest controls we can server-side:
@@ -16,6 +20,16 @@ const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 
 const IMAGE_EXT = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"];
 const AUDIO_EXT = [".mp3", ".wav", ".m4a", ".ogg", ".oga", ".webm", ".mp4", ".mpeg", ".mpga", ".flac"];
+
+export function isTrustedScanRecord(record: any, ownerEmail: string, fileUri: string) {
+  return Boolean(
+    record &&
+    record.status === "clean" &&
+    record.owner_email === ownerEmail &&
+    record.file_uri === fileUri &&
+    record.provider
+  );
+}
 
 export function validateUploadedFile(kind: "image" | "audio", fileUri: string, declaredSize?: number) {
   const ext = (fileUri || "").toLowerCase().match(/\.[a-z0-9]+$/)?.[0] || "";
