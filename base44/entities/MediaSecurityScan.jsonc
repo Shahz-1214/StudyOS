@@ -1,0 +1,76 @@
+{
+  "name": "MediaSecurityScan",
+  "type": "object",
+  "description": "Server-controlled malware scan verdicts for quarantined uploaded media. Records are written ONLY by the scanUploadedMedia backend function via the service role; app users can never create, update, or delete verdicts, so a clean status cannot be forged client-side. The AI/media processors (studyLensExtract, processLecture) fail closed unless a matching CLEAN record owned by the authenticated user exists.",
+  "properties": {
+    "file_uri": {
+      "type": "string",
+      "description": "Private-storage URI of the quarantined media file."
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the authenticated user who uploaded the file."
+    },
+    "media_kind": {
+      "type": "string",
+      "enum": [
+        "image",
+        "audio"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "clean",
+        "blocked"
+      ],
+      "default": "blocked"
+    },
+    "provider": {
+      "type": "string",
+      "description": "Malware-scanning provider that produced the verdict (e.g. opswat-metadefender)."
+    },
+    "provider_id": {
+      "type": "string",
+      "default": "",
+      "description": "Provider-side scan/report identifier."
+    },
+    "detected_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of engines that detected a threat."
+    },
+    "error_code": {
+      "type": "string",
+      "default": "",
+      "description": "Machine-readable verdict reason (e.g. MALWARE_DETECTED)."
+    }
+  },
+  "required": [
+    "file_uri",
+    "owner_email",
+    "media_kind",
+    "status",
+    "provider"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
