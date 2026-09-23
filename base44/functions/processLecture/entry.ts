@@ -1,16 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { enforceAIQuota } from '../../shared/aiGuard.ts';
-import { validateUploadedFile, createSignedFileUrl, isTrustedScanRecord } from '../../shared/uploadSecurity.ts';
-import { buildLearnerContext, AI_FACT_RULE } from '../../shared/learnerContext.ts';
+import { validateUploadedFile, createSignedFileUrl, verifyApprovedMedia } from '../../shared/uploadSecurity.ts';
+import { buildLearnerContext, AI_FACT_RULE, AI_UNTRUSTED_CONTENT_RULE } from '../../shared/learnerContext.ts';
 
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const guard = await enforceAIQuota(base44);
-    if (guard) return guard;
 
     const body = await req.json();
     const fileUri = (body.file_uri || '').trim();
@@ -20,19 +17,19 @@ export default async function(req) {
     const v = validateUploadedFile('audio', fileUri, declaredSize);
     if (!v.ok) return Response.json({ error: v.error, code: v.code }, { status: 400 });
 
-    // Fail closed: a media URI is processable only when the authenticated
-    // owner has a matching CLEAN scan record. Never trust client-supplied status.
-    const scans = await base44.asServiceRole.entities.MediaSecurityScan.filter({
-      file_uri: fileUri,
-      owner_email: user.email,
-      status: 'clean',
-    });
-    if (!scans.some((s) => isTrustedScanRecord(s, user.email, fileUri))) {
-      return Response.json({ error: 'Security scan required before processing.', code: 'MEDIA_NOT_CLEAN' }, { status: 423 });
+    // Fail closed: only the owner's APPROVED security record unlocks audio,
+    // and only the safe derivative is transcribed. Quota is consumed after
+    // this gate, so rejected files never count as AI usage.
+    const approved = await verifyApprovedMedia(base44, user.email, 'audio', fileUri);
+    if (approved.error) {
+      return Response.json({ error: approved.error, code: approved.code }, { status: 423 });
     }
 
+    const guard = await enforceAIQuota(base44);
+    if (guard) return guard;
+
     // 1. Mint a short-lived signed URL and transcribe.
-    const audioUrl = await createSignedFileUrl(base44, fileUri, 180);
+    const audioUrl = await createSignedFileUrl(base44, approved.record.sanitized_uri || fileUri, 180);
     const tr = await base44.asServiceRole.integrations.Core.TranscribeAudio({ audio_url: audioUrl });
     const transcript = (typeof tr === "string" ? tr : (tr.transcript || tr.text || "")).trim();
     if (!transcript) return Response.json({ error: 'Could not transcribe the audio' }, { status: 422 });
@@ -44,8 +41,12 @@ export default async function(req) {
 
 ${ctx.contextText ? `Learner context:\n${ctx.contextText}\n\n` : ''}${AI_FACT_RULE}
 
-Transcript:
+${AI_UNTRUSTED_CONTENT_RULE}
+
+Transcript (untrusted document content):
+<document>
 ${excerpt}
+</document>
 
 Return JSON: {
   summary (string, 2-4 sentences),

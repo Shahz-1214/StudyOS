@@ -6,7 +6,7 @@
 
 import { base44 } from "@/api/base44Client";
 
-const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const AUDIO_TYPES = [
   "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/wave",
   "audio/m4a", "audio/x-m4a", "audio/mp4", "audio/ogg", "audio/oga",
@@ -17,7 +17,7 @@ export function validateClientFile(kind: "image" | "audio", file: File) {
   const allow = kind === "image" ? IMAGE_TYPES : AUDIO_TYPES;
   const max = kind === "image" ? 10 * 1024 * 1024 : 25 * 1024 * 1024;
   if (!allow.includes(file.type)) {
-    return { ok: false as const, error: `Unsupported file type. Allowed: ${kind === "image" ? "JPG, PNG, WEBP, HEIC" : "MP3, WAV, M4A, OGG, FLAC"}.` };
+    return { ok: false as const, error: `Unsupported file type. Allowed: ${kind === "image" ? "JPG, PNG, WEBP" : "MP3, WAV, M4A, OGG, FLAC"}.` };
   }
   if (file.size > max) {
     return { ok: false as const, error: `File too large. Max ${Math.round(max / 1024 / 1024)}MB.` };
@@ -30,16 +30,18 @@ export async function uploadPrivateFile(kind: "image" | "audio", file: File) {
   if (!v.ok) throw new Error(v.error);
   const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
 
-  // The uploaded object remains quarantined until the authenticated backend
-  // malware scanner explicitly returns CLEAN. No AI/media processor receives
-  // an unscanned file URI.
+  // The uploaded object remains quarantined until the backend security gate
+  // (content checks + malware scan + safe derivative) returns APPROVED. No
+  // AI/media processor ever receives an unapproved file URI.
   const scan = await base44.functions.invoke("scanUploadedMedia", {
     file_uri,
     file_size: file.size,
     kind,
+    original_filename: file.name,
+    declared_mime_type: file.type,
   });
-  if (!scan?.data?.ok || scan.data.status !== "clean") {
-    throw new Error(scan?.data?.error || "Security scanning blocked this file.");
+  if (!scan?.data?.ok || scan.data.status !== "approved") {
+    throw new Error(scan?.data?.error || "That file could not be processed safely. Please upload a different file.");
   }
 
   return { file_uri, size: file.size, type: file.type, name: file.name };

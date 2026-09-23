@@ -1,11 +1,11 @@
 {
   "name": "MediaSecurityScan",
   "type": "object",
-  "description": "Server-controlled malware scan verdicts for quarantined uploaded media. Records are written ONLY by the scanUploadedMedia backend function via the service role; app users can never create, update, or delete verdicts, so a clean status cannot be forged client-side. The AI/media processors (studyLensExtract, processLecture) fail closed unless a matching CLEAN record owned by the authenticated user exists.",
+  "description": "Canonical security-gate state for every learner-uploaded media file. Records are written ONLY by the scanUploadedMedia backend function via the service role; app users can never create, update, or delete them, so an APPROVED status cannot be forged client-side. Media processors (studyLensExtract, processLecture) fail closed unless an APPROVED record owned by the authenticated user exists for the exact file. Users cannot read verdict records (they contain scanner details); approval status is conveyed through function responses only.",
   "properties": {
     "file_uri": {
       "type": "string",
-      "description": "Private-storage URI of the quarantined media file."
+      "description": "Private-storage URI of the quarantined original upload."
     },
     "owner_email": {
       "type": "string",
@@ -18,44 +18,108 @@
         "audio"
       ]
     },
+    "original_filename": {
+      "type": "string",
+      "default": "",
+      "description": "Client-declared filename. Untrusted metadata; never used for classification."
+    },
+    "declared_mime_type": {
+      "type": "string",
+      "default": "",
+      "description": "Client-declared MIME type. Untrusted metadata; never used for classification."
+    },
+    "detected_file_type": {
+      "type": "string",
+      "default": "",
+      "description": "Actual format detected from the file's content (magic bytes / structure)."
+    },
+    "file_size": {
+      "type": "number",
+      "default": 0,
+      "description": "Actual byte size of the quarantined original."
+    },
+    "sha256": {
+      "type": "string",
+      "default": "",
+      "description": "SHA-256 hash of the quarantined original. Used for dedupe/idempotency, never as a substitute for scanning."
+    },
     "status": {
       "type": "string",
       "enum": [
+        "pending_scan",
+        "scanning",
         "clean",
-        "blocked"
+        "infected",
+        "unsupported",
+        "rejected",
+        "scan_error",
+        "sanitization_failed",
+        "approved"
       ],
-      "default": "blocked"
+      "default": "pending_scan",
+      "description": "Security pipeline state. Only 'approved' releases the file to educational processing; 'clean' means the malware scan passed but approval is not yet recorded."
     },
-    "provider": {
-      "type": "string",
-      "description": "Malware-scanning provider that produced the verdict (e.g. opswat-metadefender)."
+    "malware_detected": {
+      "type": "boolean",
+      "default": false
     },
-    "provider_id": {
-      "type": "string",
-      "default": "",
-      "description": "Provider-side scan/report identifier."
-    },
-    "detected_count": {
-      "type": "number",
-      "default": 0,
-      "description": "Number of engines that detected a threat."
-    },
-    "error_code": {
+    "scanner_name": {
       "type": "string",
       "default": "",
-      "description": "Machine-readable verdict reason (e.g. MALWARE_DETECTED)."
+      "description": "Malware scanner that produced the verdict (self-hosted ClamAV bridge)."
+    },
+    "scanner_id": {
+      "type": "string",
+      "default": "",
+      "description": "Scanner-side scan/report identifier."
+    },
+    "scanner_version": {
+      "type": "string",
+      "default": "",
+      "description": "Scanner engine/definitions version reported by the bridge."
+    },
+    "detected_signature": {
+      "type": "string",
+      "default": "",
+      "description": "Threat signature reported by the scanner. Never exposed to ordinary users."
+    },
+    "scan_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sanitization_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "sanitized",
+        "validated_original",
+        "failed"
+      ],
+      "default": "pending",
+      "description": "'sanitized' = a rebuilt safe derivative is stored; 'validated_original' = format cannot be rebuilt in-runtime, so the scanned+structure-validated original is used."
+    },
+    "sanitized_uri": {
+      "type": "string",
+      "default": "",
+      "description": "Private-storage URI of the safe derivative. Empty when the validated original is used."
+    },
+    "rejection_reason_code": {
+      "type": "string",
+      "default": "",
+      "description": "Machine-readable terminal reason (e.g. EXECUTABLE_CONTENT, ARCHIVE_NOT_ALLOWED, SCANNER_UNAVAILABLE)."
     }
   },
   "required": [
     "file_uri",
     "owner_email",
     "media_kind",
-    "status",
-    "provider"
+    "status"
   ],
   "rls": {
     "read": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "create": {
       "user_condition": {
