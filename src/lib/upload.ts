@@ -29,5 +29,18 @@ export async function uploadPrivateFile(kind: "image" | "audio", file: File) {
   const v = validateClientFile(kind, file);
   if (!v.ok) throw new Error(v.error);
   const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
+
+  // The uploaded object remains quarantined until the authenticated backend
+  // malware scanner explicitly returns CLEAN. No AI/media processor receives
+  // an unscanned file URI.
+  const scan = await base44.functions.invoke("scanUploadedMedia", {
+    file_uri,
+    file_size: file.size,
+    kind,
+  });
+  if (!scan?.data?.ok || scan.data.status !== "clean") {
+    throw new Error(scan?.data?.error || "Security scanning blocked this file.");
+  }
+
   return { file_uri, size: file.size, type: file.type, name: file.name };
 }
