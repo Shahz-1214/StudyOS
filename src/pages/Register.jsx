@@ -11,6 +11,8 @@ import AuthUnavailable from "@/components/AuthUnavailable";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import Turnstile from "@/components/Turnstile";
+import { TURNSTILE_ACTIONS, verifyTurnstileToken } from "@/lib/turnstileConfig";
 
 const MINIMUM_AGE = 13;
 const OTP_UI_TTL_MS = 10 * 60 * 1000;
@@ -51,6 +53,12 @@ export default function Register() {
   const [otpStartedAt, setOtpStartedAt] = useState(0);
   const [otpRemaining, setOtpRemaining] = useState(0);
   const [resendBusy, setResendBusy] = useState(false);
+  const [signupToken, setSignupToken] = useState(null);
+  const [signupBypass, setSignupBypass] = useState(false);
+  const [signupReset, setSignupReset] = useState(0);
+  const [otpToken, setOtpToken] = useState(null);
+  const [otpBypass, setOtpBypass] = useState(false);
+  const [otpReset, setOtpReset] = useState(0);
 
   const checks = useMemo(() => passwordChecks(password), [password]);
   const passwordScore = Object.values(checks).filter(Boolean).length;
@@ -108,12 +116,22 @@ export default function Register() {
 
     setLoading(true);
     try {
+      if (!signupBypass) {
+        const ok = await verifyTurnstileToken(signupToken, TURNSTILE_ACTIONS.signup);
+        if (!ok) {
+          setError("Verification failed. Please try again.");
+          setSignupToken("");
+          setSignupReset((r) => r + 1);
+          return;
+        }
+      }
       await base44.auth.register({ email: email.trim(), password });
       setShowOtp(true);
       setOtpStartedAt(Date.now());
       setOtpRemaining(OTP_UI_TTL_MS);
     } catch (err) {
       setError(err.message || "Registration failed. Please try again.");
+      setSignupReset((r) => r + 1);
     } finally {
       setLoading(false);
     }
@@ -128,6 +146,15 @@ export default function Register() {
     if (otpCode.length < 6) return;
     setLoading(true);
     try {
+      if (!otpBypass) {
+        const ok = await verifyTurnstileToken(otpToken, TURNSTILE_ACTIONS.otp);
+        if (!ok) {
+          setError("Verification failed. Please try again.");
+          setOtpToken("");
+          setOtpReset((r) => r + 1);
+          return;
+        }
+      }
       const result = await base44.auth.verifyOtp({ email: email.trim(), otpCode });
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
@@ -135,6 +162,7 @@ export default function Register() {
       window.location.href = returnTo;
     } catch (err) {
       setError(err?.status === 429 ? "Too many verification attempts. Please wait before trying again." : (err.message || "Invalid or expired verification code."));
+      setOtpReset((r) => r + 1);
     } finally {
       setLoading(false);
     }
@@ -148,13 +176,25 @@ export default function Register() {
     setResendBusy(true);
     setError("");
     try {
+      if (!otpBypass) {
+        const ok = await verifyTurnstileToken(otpToken, TURNSTILE_ACTIONS.otp);
+        if (!ok) {
+          setError("Verification failed. Please try again.");
+          setOtpToken("");
+          setOtpReset((r) => r + 1);
+          return;
+        }
+      }
       await base44.auth.resendOtp(email.trim());
       setOtpStartedAt(Date.now());
       setOtpRemaining(OTP_UI_TTL_MS);
       setOtpCode("");
+      setOtpToken("");
+      setOtpReset((r) => r + 1);
       toast({ title: "New code sent", description: "Check your email for the latest verification code." });
     } catch (err) {
       setError(err?.status === 429 ? "Too many code requests. Please wait before requesting another." : (err.message || "Failed to resend code."));
+      setOtpReset((r) => r + 1);
     } finally {
       setResendBusy(false);
     }
@@ -219,10 +259,12 @@ export default function Register() {
           {otpRemaining ? `Code window: ${minutes}:${seconds}` : "Code window expired"}
         </div>
 
+        <Turnstile action={TURNSTILE_ACTIONS.otp} onVerify={setOtpToken} onBypass={() => setOtpBypass(true)} resetKey={otpReset} className="mb-1" />
+
         <Button
           className="h-12 w-full bg-emerald-400 font-semibold text-black hover:bg-emerald-300"
           onClick={handleVerify}
-          disabled={loading || otpCode.length < 6 || !otpRemaining}
+          disabled={loading || otpCode.length < 6 || !otpRemaining || (!otpBypass && !otpToken)}
         >
           {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</> : "Verify email"}
         </Button>
@@ -230,7 +272,7 @@ export default function Register() {
         <button
           type="button"
           onClick={handleResend}
-          disabled={resendBusy || loading}
+          disabled={resendBusy || loading || (!otpBypass && !otpToken)}
           className="mt-4 w-full text-center text-sm font-medium text-emerald-400 transition hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {resendBusy ? "Sending..." : "Send a new code"}
@@ -336,7 +378,9 @@ export default function Register() {
           </span>
         </label>
 
-        <Button type="submit" className="h-12 w-full bg-emerald-400 font-semibold text-black hover:bg-emerald-300" disabled={loading}>
+        <Turnstile action={TURNSTILE_ACTIONS.signup} onVerify={setSignupToken} onBypass={() => setSignupBypass(true)} resetKey={signupReset} className="mb-1" />
+
+        <Button type="submit" className="h-12 w-full bg-emerald-400 font-semibold text-black hover:bg-emerald-300" disabled={loading || (!signupBypass && !signupToken)}>
           {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating securely...</> : <><CheckCircle2 className="mr-2 h-4 w-4" /> Create secure account</>}
         </Button>
       </form>

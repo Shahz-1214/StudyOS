@@ -7,6 +7,8 @@ import { track, EVENTS } from "@/lib/analytics";
 import { uploadPrivateFile } from "@/lib/upload";
 import StudyPanel from "@/components/StudyPanel";
 import PageSkeleton from "@/components/PageSkeleton";
+import Turnstile from "@/components/Turnstile";
+import { TURNSTILE_ACTIONS } from "@/lib/turnstileConfig";
 import { Loader2, Headphones, Upload, Sparkles, AlertTriangle, FileText, Layers, HelpCircle, MessageSquareQuote, Send, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 
 export default function LectureMind() {
@@ -24,6 +26,9 @@ export default function LectureMind() {
   const [askBusy, setAskBusy] = useState(false);
   const [answer, setAnswer] = useState(null);
   const [openChunk, setOpenChunk] = useState(null);
+  const [tsToken, setTsToken] = useState(null);
+  const [tsBypass, setTsBypass] = useState(false);
+  const [tsReset, setTsReset] = useState(0);
 
   useEffect(() => { base44.entities.Lecture.list("-created_date", 5).then(setPast).catch(() => {}); }, []);
 
@@ -36,7 +41,9 @@ export default function LectureMind() {
     if (!file) return;
     setBusy(true); setError(null);
     try {
-      const { file_uri, size } = await uploadPrivateFile("audio", file);
+      const { file_uri, size } = await uploadPrivateFile("audio", file, tsToken);
+      setTsToken("");
+      setTsReset((r) => r + 1);
       setAudioUri(file_uri);
       setAudioSize(size);
       if (!title) setTitle(file.name.replace(/\.[^.]+$/, ""));
@@ -94,7 +101,8 @@ export default function LectureMind() {
           <label className="eyebrow block mb-2">Lecture title (optional)</label>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Cell Biology — Lecture 4"
             className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-[14px] text-foreground mb-4 focus:outline-none focus:ring-2 focus:ring-primary" />
-          <label className="block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center cursor-pointer hover:bg-secondary/40">
+          <Turnstile action={TURNSTILE_ACTIONS.upload} onVerify={setTsToken} onBypass={() => setTsBypass(true)} resetKey={tsReset} className="mb-3" />
+          <label className={`block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center ${(!tsBypass && !tsToken) ? "opacity-50 pointer-events-none" : "cursor-pointer hover:bg-secondary/40"}`}>
             <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
             <div className="text-sm text-foreground">{audioUri ? "Audio uploaded ✓ — tap to replace" : "Tap to upload an audio recording"}</div>
             <div className="text-[11px] text-muted-foreground mt-1">mp3, wav, m4a, ogg — up to 25MB</div>

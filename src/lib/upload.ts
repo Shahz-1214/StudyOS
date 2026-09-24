@@ -25,20 +25,23 @@ export function validateClientFile(kind: "image" | "audio", file: File) {
   return { ok: true as const };
 }
 
-export async function uploadPrivateFile(kind: "image" | "audio", file: File) {
+export async function uploadPrivateFile(kind: "image" | "audio", file: File, turnstileToken: string = "") {
   const v = validateClientFile(kind, file);
   if (!v.ok) throw new Error(v.error);
   const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
 
   // The uploaded object remains quarantined until the backend security gate
   // (content checks + malware scan + safe derivative) returns APPROVED. No
-  // AI/media processor ever receives an unapproved file URI.
+  // AI/media processor ever receives an unapproved file URI. The Turnstile
+  // token (upload action) is verified server-side inside the gate as an
+  // anti-bot layer — it is NOT malware scanning or file sanitization.
   const scan = await base44.functions.invoke("scanUploadedMedia", {
     file_uri,
     file_size: file.size,
     kind,
     original_filename: file.name,
     declared_mime_type: file.type,
+    turnstile_token: turnstileToken,
   });
   if (!scan?.data?.ok || scan.data.status !== "approved") {
     throw new Error(scan?.data?.error || "That file could not be processed safely. Please upload a different file.");

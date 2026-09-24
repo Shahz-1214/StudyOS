@@ -6,16 +6,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import Turnstile from "@/components/Turnstile";
+import { TURNSTILE_ACTIONS, verifyTurnstileToken } from "@/lib/turnstileConfig";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [tsToken, setTsToken] = useState(null);
+  const [tsBypass, setTsBypass] = useState(false);
+  const [tsReset, setTsReset] = useState(0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
+      if (!tsBypass) {
+        const ok = await verifyTurnstileToken(tsToken, TURNSTILE_ACTIONS.password_reset);
+        if (!ok) {
+          setLoading(false);
+          setTsToken("");
+          setTsReset((r) => r + 1);
+          return;
+        }
+      }
       await base44.auth.resetPasswordRequest(email);
     } catch {
       // Always show success regardless
@@ -59,7 +73,9 @@ export default function ForgotPassword() {
               />
             </div>
           </div>
-          <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+          <Turnstile action={TURNSTILE_ACTIONS.password_reset} onVerify={setTsToken} onBypass={() => setTsBypass(true)} resetKey={tsReset} className="mb-1" />
+
+          <Button type="submit" className="w-full h-12 font-medium" disabled={loading || (!tsBypass && !tsToken)}>
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

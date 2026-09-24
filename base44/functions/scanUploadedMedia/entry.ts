@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
 import { secrets } from 'base44:runtime';
 import { validateUploadedFile, readQuarantinedBytes, sha256Hex, detectFileType, classifyUpload } from '../../shared/uploadSecurity.ts';
 import { sanitizeMedia } from '../../shared/mediaSanitize.ts';
+import { verifyTurnstileToken } from '../../shared/turnstileVerify.ts';
 
 // Canonical security gate for every learner-uploaded media file. One gate,
 // consumed by every media processor (StudyLens images, LectureMind audio).
@@ -37,6 +38,18 @@ function getSecret(name) {
   }
 }
 
+function getRemoteIp(req) {
+  try {
+    const cf = req.headers.get('cf-connecting-ip');
+    if (cf) return cf.trim();
+    const xff = req.headers.get('x-forwarded-for');
+    if (xff) return xff.split(',')[0].trim();
+  } catch {
+    /* ignore */
+  }
+  return '';
+}
+
 export default async function(req) {
   let base44;
   try {
@@ -55,6 +68,15 @@ export default async function(req) {
     // Stage 0: declared extension + declared size allowlist.
     const validation = validateUploadedFile(kind, fileUri, declaredSize);
     if (!validation.ok) return json({ ok: false, error: validation.error, code: validation.code }, 400);
+
+    // Anti-bot gate (Cloudflare Turnstile, "upload" action). Enforced
+    // server-side before any expensive scanning work. Supplements (does not
+    // replace) the rate limiter below. Bypasses only when Turnstile is not
+    // configured (both site key + secret unset).
+    const turnstile = await verifyTurnstileToken(body.turnstile_token, 'upload', getRemoteIp(req));
+    if (!turnstile.ok) {
+      return json({ ok: false, error: turnstile.error || GENERIC_REJECT, code: 'TURNSTILE_' + (turnstile.code || 'FAILED') }, 400);
+    }
 
     // Repeated-upload abuse guard (deterministic, server-side, per user).
     // The accounting event is written FIRST, then the rolling window is

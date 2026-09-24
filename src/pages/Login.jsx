@@ -10,6 +10,8 @@ import AuthUnavailable from "@/components/AuthUnavailable";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { getAuthRateLimitState, recordFailedAuthAttempt, resetAuthRateLimit } from "@/lib/authRateLimit";
+import Turnstile from "@/components/Turnstile";
+import { TURNSTILE_ACTIONS, verifyTurnstileToken } from "@/lib/turnstileConfig";
 
 function friendlyAuthError(error) {
   if (error?.status === 429) {
@@ -31,6 +33,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [offline, setOffline] = useState(() => typeof navigator !== "undefined" && !navigator.onLine);
   const [rateState, setRateState] = useState(() => getAuthRateLimitState());
+  const [tsToken, setTsToken] = useState(null);
+  const [tsBypass, setTsBypass] = useState(false);
+  const [tsReset, setTsReset] = useState(0);
   const returnTo = safeReturnTo();
 
   useEffect(() => {
@@ -72,6 +77,15 @@ export default function Login() {
 
     setLoading(true);
     try {
+      if (!tsBypass) {
+        const ok = await verifyTurnstileToken(tsToken, TURNSTILE_ACTIONS.login);
+        if (!ok) {
+          setError("Verification failed. Please try again.");
+          setTsToken("");
+          setTsReset((r) => r + 1);
+          return;
+        }
+      }
       await base44.auth.loginViaEmailPassword(email.trim(), password);
       resetAuthRateLimit();
       window.location.href = returnTo;
@@ -79,6 +93,7 @@ export default function Login() {
       const next = recordFailedAuthAttempt();
       setRateState(next);
       setError(friendlyAuthError(err));
+      setTsReset((r) => r + 1);
     } finally {
       setLoading(false);
     }
@@ -214,7 +229,9 @@ export default function Login() {
           </div>
         </div>
 
-        <Button type="submit" className="h-12 w-full bg-emerald-400 font-semibold text-black hover:bg-emerald-300" disabled={loading || rateState.locked}>
+        <Turnstile action={TURNSTILE_ACTIONS.login} onVerify={setTsToken} onBypass={() => setTsBypass(true)} resetKey={tsReset} className="mb-1" />
+
+        <Button type="submit" className="h-12 w-full bg-emerald-400 font-semibold text-black hover:bg-emerald-300" disabled={loading || rateState.locked || (!tsBypass && !tsToken)}>
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

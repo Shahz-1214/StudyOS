@@ -7,6 +7,8 @@ import { track, EVENTS } from "@/lib/analytics";
 import { uploadPrivateFile } from "@/lib/upload";
 import StudyPanel from "@/components/StudyPanel";
 import PageSkeleton from "@/components/PageSkeleton";
+import Turnstile from "@/components/Turnstile";
+import { TURNSTILE_ACTIONS } from "@/lib/turnstileConfig";
 import { Loader2, ScanLine, ImagePlus, Type, Sparkles, AlertTriangle, ArrowRight, Lightbulb } from "lucide-react";
 
 export default function StudyLens() {
@@ -20,6 +22,9 @@ export default function StudyLens() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const [tsToken, setTsToken] = useState(null);
+  const [tsBypass, setTsBypass] = useState(false);
+  const [tsReset, setTsReset] = useState(0);
 
   if (loading) return <PageSkeleton />;
   if (!user) return <Navigate to="/" replace />;
@@ -30,7 +35,9 @@ export default function StudyLens() {
     if (!file) return;
     setBusy(true); setError(null);
     try {
-      const { file_uri, size } = await uploadPrivateFile("image", file);
+      const { file_uri, size } = await uploadPrivateFile("image", file, tsToken);
+      setTsToken("");
+      setTsReset((r) => r + 1);
       setFileUri(file_uri);
       setFileSize(size);
       setPreviewUrl(URL.createObjectURL(file));
@@ -83,7 +90,8 @@ export default function StudyLens() {
           />
         ) : (
           <div>
-            <label className="block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center cursor-pointer hover:bg-secondary/40">
+            <Turnstile action={TURNSTILE_ACTIONS.upload} onVerify={setTsToken} onBypass={() => setTsBypass(true)} resetKey={tsReset} className="mb-3" />
+            <label className={`block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center ${(!tsBypass && !tsToken) ? "opacity-50 pointer-events-none" : "cursor-pointer hover:bg-secondary/40"}`}>
               <ImagePlus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
               <div className="text-sm text-foreground">{fileUri ? "Image uploaded ✓ — tap to replace" : "Tap to upload a photo of the problem"}</div>
               <input type="file" accept="image/*" onChange={onFile} className="hidden" />

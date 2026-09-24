@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Loader2, AlertTriangle } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import Turnstile from "@/components/Turnstile";
+import { TURNSTILE_ACTIONS, verifyTurnstileToken } from "@/lib/turnstileConfig";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -15,6 +17,9 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [tsToken, setTsToken] = useState(null);
+  const [tsBypass, setTsBypass] = useState(false);
+  const [tsReset, setTsReset] = useState(0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,10 +30,21 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
+      if (!tsBypass) {
+        const ok = await verifyTurnstileToken(tsToken, TURNSTILE_ACTIONS.password_reset);
+        if (!ok) {
+          setError("Verification failed. Please try again.");
+          setTsToken("");
+          setTsReset((r) => r + 1);
+          setLoading(false);
+          return;
+        }
+      }
       await base44.auth.resetPassword({ resetToken, newPassword });
       window.location.href = "/login";
     } catch (err) {
       setError(err.message || "Failed to reset password");
+      setTsReset((r) => r + 1);
     } finally {
       setLoading(false);
     }
@@ -98,7 +114,9 @@ export default function ResetPassword() {
             />
           </div>
         </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+        <Turnstile action={TURNSTILE_ACTIONS.password_reset} onVerify={setTsToken} onBypass={() => setTsBypass(true)} resetKey={tsReset} className="mb-1" />
+
+        <Button type="submit" className="w-full h-12 font-medium" disabled={loading || (!tsBypass && !tsToken)}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
