@@ -1,6 +1,7 @@
 {
   "name": "SubscriptionState",
   "type": "object",
+  "description": "Server-managed entitlement record. Create/update/delete are admin-only so the plan/status fields can never be self-upgraded by the record owner. Paid tiers are granted only by a server-side source of truth (e.g. a verified purchase webhook); the absence of a record is treated as the free tier. Owner-read is retained so the user can view their own plan, but they cannot modify it.",
   "properties": {
     "plan": {
       "type": "string",
@@ -38,13 +39,19 @@
       "created_by_id": "{{user.id}}"
     },
     "create": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }

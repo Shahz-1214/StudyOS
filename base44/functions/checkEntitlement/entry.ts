@@ -9,14 +9,13 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Find or seed the user's subscription state.
-    let subs = await base44.entities.SubscriptionState.list("-created_date", 1);
-    let sub = subs[0];
-    if (!sub) {
-      sub = await base44.entities.SubscriptionState.create({ plan: "free", status: "active" });
-    }
+    // SubscriptionState is admin-only for create/update/delete (RLS), so the
+    // plan/status fields are server-managed and cannot be self-upgraded by the
+    // caller. Absence of a record means free — we do not seed a record here.
+    const subs = await base44.entities.SubscriptionState.list("-created_date", 1);
+    const sub = subs[0];
     const now = Date.now();
-    const isPro = (sub.plan === "pro" || sub.plan === "elite") && ["active", "trialing"].includes(sub.status) && (!sub.expires_at || new Date(sub.expires_at).getTime() > now);
+    const isPro = !!sub && (sub.plan === "pro" || sub.plan === "elite") && ["active", "trialing"].includes(sub.status) && (!sub.expires_at || new Date(sub.expires_at).getTime() > now);
 
     // Count today's AI usage from the Event log (user-scoped via RLS).
     const events = await base44.entities.Event.list("-occurred_at", 100);
@@ -24,13 +23,13 @@ export default async function(req) {
     const used = events.filter((e) => AI_EVENTS.includes(e.event_name) && new Date(e.occurred_at) >= todayStart).length;
 
     return Response.json({
-      plan: sub.plan,
-      status: sub.status,
+      plan: sub?.plan || "free",
+      status: sub?.status || "active",
       is_pro: isPro,
       ai_used_today: used,
       ai_limit: isPro ? null : FREE_LIMIT,
       remaining: isPro ? null : Math.max(0, FREE_LIMIT - used),
-      expires_at: sub.expires_at || null,
+      expires_at: sub?.expires_at || null,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
