@@ -42,6 +42,8 @@ export default function StudyLens() {
       setFileSize(size);
       setPreviewUrl(URL.createObjectURL(file));
     } catch (err) {
+      setTsToken("");
+      setTsReset((r) => r + 1);
       setError(err?.message || "Couldn't upload the image. Try again.");
     }
     setBusy(false);
