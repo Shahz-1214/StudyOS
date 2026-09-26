@@ -35,14 +35,20 @@ export async function uploadPrivateFile(kind: "image" | "audio", file: File, tur
   // AI/media processor ever receives an unapproved file URI. The Turnstile
   // token (upload action) is verified server-side inside the gate as an
   // anti-bot layer — it is NOT malware scanning or file sanitization.
-  const scan = await base44.functions.invoke("scanUploadedMedia", {
-    file_uri,
-    file_size: file.size,
-    kind,
-    original_filename: file.name,
-    declared_mime_type: file.type,
-    turnstile_token: turnstileToken,
-  });
+  let scan;
+  try {
+    scan = await base44.functions.invoke("scanUploadedMedia", {
+      file_uri,
+      file_size: file.size,
+      kind,
+      original_filename: file.name,
+      declared_mime_type: file.type,
+      turnstile_token: turnstileToken,
+    });
+  } catch (err) {
+    const message = err?.response?.data?.error || err?.response?.data?.message;
+    throw new Error(message || "That file could not be processed safely. Please upload a different file.");
+  }
   if (!scan?.data?.ok || scan.data.status !== "approved") {
     throw new Error(scan?.data?.error || "That file could not be processed safely. Please upload a different file.");
   }
