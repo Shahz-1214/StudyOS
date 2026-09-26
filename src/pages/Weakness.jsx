@@ -42,6 +42,7 @@ export default function Weakness() {
         <div className="eyebrow">Plan · Stage 4</div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mt-1 flex items-center gap-2">
           <AlertCircle className="w-6 h-6 text-primary" /> Weakness AI
+          <span className="text-[9px] font-bold uppercase tracking-wide rounded-full border border-primary/30 text-primary px-2 py-1">Pro · 1 credit</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-1">An AI diagnostic over your mastery data — surfaces hidden weaknesses, priority order, and targeted recommendations.</p>
       </div>
