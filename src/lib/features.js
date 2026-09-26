@@ -5,7 +5,7 @@
 // short: one-line purpose used on dashboard tool cards
 
 export const FEATURES = [
-  { id: "studylens", title: "StudyLens", group: "study", stage: 3, status: "functional", icon: "ScanLine", accent: "#4D8DFF",
+  { id: "studylens", title: "StudyLens", group: "study", stage: 3, status: "functional", premium: true, icon: "ScanLine", accent: "#4D8DFF",
     short: "Turn a difficult question into a clear solution.",
     desc: "Capture a problem by photo or paste it in. Get structured extraction, concept detection, and a guided learning path — not just an answer dump." },
   { id: "homework", title: "Homework Coach", group: "study", stage: 3, status: "functional", icon: "GraduationCap", accent: "#9B82F3",
@@ -14,17 +14,17 @@ export const FEATURES = [
   { id: "note-quiz", title: "Note → Quiz", group: "study", stage: 3, status: "functional", icon: "FileText", accent: "#42D392",
     short: "Turn your notes into practice questions.",
     desc: "Turn notes into validated practice questions (MCQ, True/False, short answer), then let StudyOS learn what you keep missing." },
-  { id: "lecture", title: "LectureMind", group: "study", stage: 5, status: "functional", icon: "Headphones", accent: "#E779A8",
+  { id: "lecture", title: "LectureMind", group: "study", stage: 5, status: "functional", premium: true, icon: "Headphones", accent: "#E779A8",
     short: "Turn lectures into structured study material.",
     desc: "Upload a lecture → transcript, key-point chunks, summary, concepts, flashcards, and a Q&A over the source." },
-  { id: "essay", title: "EssayCheck", group: "study", stage: 5, status: "functional", icon: "PenLine", accent: "#F2B84B",
+  { id: "essay", title: "EssayCheck", group: "study", stage: 5, status: "functional", premium: true, icon: "PenLine", accent: "#F2B84B",
     short: "Feedback on structure and argument that keeps your voice yours.",
     desc: "Grammar, structure, argument, and readability analysis with targeted feedback. Your voice stays yours — no auto-rewrite." },
 
   { id: "exampilot", title: "ExamPilot", group: "plan", stage: 4, status: "functional", icon: "CalendarClock", accent: "#4D8DFF",
     short: "Build a study plan around your real exams.",
     desc: "Build adaptive exams that target your weakest concepts, and generate a day-by-day revision plan around the time you actually have." },
-  { id: "weakness", title: "Weakness AI", group: "plan", stage: 4, status: "functional", icon: "AlertCircle", accent: "#EF6B73",
+  { id: "weakness", title: "Weakness AI", group: "plan", stage: 4, status: "functional", premium: true, icon: "AlertCircle", accent: "#EF6B73",
     short: "Find the topics costing you marks.",
     desc: "An AI diagnostic over your mastery data — surfaces hidden weaknesses, priority order, and targeted recommendations." },
   { id: "tasks", title: "Tasks", group: "plan", stage: 6, status: "functional", icon: "CheckSquare", accent: "#42D392",
