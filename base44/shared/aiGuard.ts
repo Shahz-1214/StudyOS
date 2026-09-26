@@ -1,4 +1,9 @@
-import { PLAN_LIMITS, resolveEffectivePlan } from './subscriptionPlans.ts';
+import {
+  PLAN_LIMITS,
+  resolveEffectivePlan,
+  getPremiumPeriodStart,
+  getNextPremiumReset,
+} from './subscriptionPlans.ts';
 
 export async function enforceAIQuota(base44, eventName = "ai_request_started", premiumFeature = "") {
   const subs = await base44.entities.SubscriptionState.list("-created_date", 1);
@@ -19,12 +24,16 @@ export async function enforceAIQuota(base44, eventName = "ai_request_started", p
   const dayStart = new Date();
   dayStart.setUTCHours(0, 0, 0, 0);
   const todayStartMs = dayStart.getTime();
+  const premiumPeriodStartMs = getPremiumPeriodStart(new Date(now), plan).getTime();
 
   const recent = (events || []).filter(
     (e) => e.event_name === countedEvent && new Date(e.occurred_at).getTime() >= minuteAgo
   );
   const today = (events || []).filter(
     (e) => e.event_name === countedEvent && new Date(e.occurred_at).getTime() >= todayStartMs
+  );
+  const premiumPeriod = (events || []).filter(
+    (e) => e.event_name === countedEvent && new Date(e.occurred_at).getTime() >= premiumPeriodStartMs
   );
 
   if (recent.length >= limits.aiPerMinute) {
@@ -35,14 +44,18 @@ export async function enforceAIQuota(base44, eventName = "ai_request_started", p
   }
 
   if (isPremium) {
-    if (today.length >= limits.premiumDaily) {
+    if (premiumPeriod.length >= limits.premiumAllowance) {
+      const nextReset = getNextPremiumReset(new Date(now), plan).toISOString();
+      const exhaustedMessage = plan === "free"
+        ? "You've used this month's 15 Pro credits. They refresh at the next monthly reset."
+        : "You've used this week's " + limits.premiumAllowance + " Pro credits. They refresh at the next weekly restock.";
       return Response.json(
         {
-          error: plan === "free"
-            ? "You've used today's 5 Pro credits. They refresh at the next daily reset."
-            : "You've reached today's premium-action limit. Your premium allowance refreshes at the next daily reset.",
+          error: exhaustedMessage,
           code: "PREMIUM_CREDITS_EXHAUSTED",
-          limit: limits.premiumDaily,
+          limit: limits.premiumAllowance,
+          reset: limits.premiumReset,
+          next_reset_at: nextReset,
           feature: premiumFeature,
         },
         { status: 429 }
