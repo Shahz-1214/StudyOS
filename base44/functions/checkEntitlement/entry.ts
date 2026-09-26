@@ -1,5 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { PLAN_LIMITS, resolveEffectivePlan, getNextUtcReset, PREMIUM_FEATURES } from '../../shared/subscriptionPlans.ts';
+import {
+  PLAN_LIMITS,
+  resolveEffectivePlan,
+  getNextUtcReset,
+  getPremiumPeriodStart,
+  getNextPremiumReset,
+  PREMIUM_FEATURES,
+} from '../../shared/subscriptionPlans.ts';
 
 export default async function(req) {
   try {
@@ -25,13 +32,18 @@ export default async function(req) {
     const dayStart = new Date();
     dayStart.setUTCHours(0, 0, 0, 0);
     const dayStartMs = dayStart.getTime();
+    const premiumPeriodStart = getPremiumPeriodStart(new Date(now), plan);
+    const premiumPeriodStartMs = premiumPeriodStart.getTime();
 
     const today = (events || []).filter(
       (e) => new Date(e.occurred_at).getTime() >= dayStartMs
     );
+    const premiumPeriod = (events || []).filter(
+      (e) => new Date(e.occurred_at).getTime() >= premiumPeriodStartMs
+    );
     const standardUsed = today.filter((e) => e.event_name === "ai_request_started").length;
-    const premiumUsed = today.filter((e) => e.event_name === "premium_ai_action").length;
-    const premiumRemaining = Math.max(0, limits.premiumDaily - premiumUsed);
+    const premiumUsed = premiumPeriod.filter((e) => e.event_name === "premium_ai_action").length;
+    const premiumRemaining = Math.max(0, limits.premiumAllowance - premiumUsed);
     const standardRemaining = Math.max(0, limits.standardDaily - standardUsed);
 
     return Response.json({
@@ -41,9 +53,12 @@ export default async function(req) {
       ai_used_today: standardUsed,
       ai_limit: limits.standardDaily,
       remaining: standardRemaining,
-      premium_used_today: premiumUsed,
-      premium_limit: limits.premiumDaily,
+      premium_used: premiumUsed,
+      premium_limit: limits.premiumAllowance,
       premium_remaining: premiumRemaining,
+      premium_reset_type: limits.premiumReset,
+      premium_period_start_at: premiumPeriodStart.toISOString(),
+      next_premium_reset_at: getNextPremiumReset(new Date(now), plan).toISOString(),
       premium_features: Object.entries(PREMIUM_FEATURES).map(([id, name]) => ({ id, name, cost: 1 })),
       ai_per_minute: limits.aiPerMinute,
       premium_per_ten_minutes: limits.premiumPerTenMinutes,
