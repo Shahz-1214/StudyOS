@@ -68,6 +68,7 @@ export default function StudyLens() {
         <div className="eyebrow">Study · Stage 3</div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mt-1 flex items-center gap-2">
           <ScanLine className="w-6 h-6 text-primary" /> StudyLens
+          <span className="text-[9px] font-bold uppercase tracking-wide rounded-full border border-primary/30 text-primary px-2 py-1">Pro · 1 credit</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Capture a problem by photo or paste it in. Get structured extraction, concept detection, and a learning path — not just an answer.</p>
       </div>
