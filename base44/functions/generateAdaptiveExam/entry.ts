@@ -8,7 +8,7 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const guard = await enforceAIQuota(base44);
+    const guard = await enforceAIQuota(base44, "ai_request_started", "adaptive_exam");
     if (guard) return guard;
 
     const body = await req.json();
