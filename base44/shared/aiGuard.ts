@@ -8,7 +8,11 @@ export async function enforceAIQuota(base44, eventName = "ai_request_started") {
   const paid = !!sub && ["pro", "elite"].includes(sub.plan) && ["active", "trialing"].includes(sub.status)
     && (!sub.expires_at || new Date(sub.expires_at).getTime() > now);
 
-  const events = await base44.entities.Event.list("-occurred_at", 120);
+  // Read only this quota event type (not all events) so a user cannot flood
+  // the ledger with unrelated events to evict quota rows from the window.
+  // Combined with admin-only delete on Event, neither deletion nor flooding
+  // can reset the counters.
+  const events = await base44.entities.Event.filter({ event_name: eventName }, "-occurred_at", 120);
   const minuteAgo = now - 60_000;
   const dayStart = new Date();
   dayStart.setHours(0, 0, 0, 0);

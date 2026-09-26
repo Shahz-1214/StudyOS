@@ -1,6 +1,7 @@
 {
   "name": "Event",
   "type": "object",
+  "description": "Append-only analytics and quota-accounting ledger. Delete and update are admin-only so users cannot tamper with accounting rows (e.g. delete their own ai_request_started / media_scan_requested events to reset rate limits). Read and create remain owner-scoped: the Dashboard's activity feed reads its own events, and server quota guards write accounting events under the caller's identity \u2014 but those rows are then immutable from the client.",
   "properties": {
     "event_name": {
       "type": "string"
@@ -25,10 +26,14 @@
       "created_by_id": "{{user.id}}"
     },
     "update": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "created_by_id": "{{user.id}}"
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }

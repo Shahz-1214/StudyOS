@@ -37,6 +37,6 @@ Return JSON: { questions: [{ prompt, options (4 strings), correct_index (0-3), d
     if (!questions.length) return Response.json({ error: 'Could not generate an exam' }, { status: 422 });
     return Response.json({ questions, source: "ai" });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: 'Could not generate the exam. Try again.' }, { status: 500 });
   }
 }

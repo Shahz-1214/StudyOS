@@ -36,6 +36,6 @@ ${notes}`;
 
     return Response.json({ questions, source: "ai" });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: 'Could not generate questions from these notes. Try again.' }, { status: 500 });
   }
 }

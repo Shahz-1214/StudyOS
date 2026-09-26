@@ -59,6 +59,6 @@ Return JSON: {
       summary: result.summary || "",
     });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: 'Could not analyze the essay. Try again.' }, { status: 500 });
   }
 }

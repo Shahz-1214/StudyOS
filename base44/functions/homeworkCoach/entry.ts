@@ -56,6 +56,6 @@ Return JSON: { hint (the hint text), hint_level, is_final (true only at level 4)
       teaching_note: result.teaching_note || "",
     });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: 'Could not provide a hint right now. Try again.' }, { status: 500 });
   }
 }

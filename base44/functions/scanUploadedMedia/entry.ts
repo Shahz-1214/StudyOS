@@ -87,7 +87,10 @@ export default async function(req) {
       properties: { source: 'security_gate' },
       occurred_at: new Date().toISOString(),
     });
-    const window = await base44.entities.Event.list('-occurred_at', 30);
+    // Read only scan-request events so unrelated filler events cannot evict
+    // scan rows from the window. Combined with admin-only delete on Event,
+    // neither deletion nor flooding can reset the rate window.
+    const window = await base44.entities.Event.filter({ event_name: 'media_scan_requested' }, '-occurred_at', 30);
     const minuteAgo = Date.now() - 60000;
     const recentScans = (window || []).filter(
       (e) => e.event_name === 'media_scan_requested' && new Date(e.occurred_at).getTime() >= minuteAgo
