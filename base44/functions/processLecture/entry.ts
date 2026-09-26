@@ -25,7 +25,7 @@ export default async function(req) {
       return Response.json({ error: approved.error, code: approved.code }, { status: 423 });
     }
 
-    const guard = await enforceAIQuota(base44);
+    const guard = await enforceAIQuota(base44, "ai_request_started", "lecturemind");
     if (guard) return guard;
 
     // 1. Mint a short-lived signed URL and transcribe.
