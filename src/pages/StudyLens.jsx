@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
@@ -25,29 +25,50 @@ export default function StudyLens() {
   const [tsToken, setTsToken] = useState(null);
   const [tsBypass, setTsBypass] = useState(false);
   const [tsReset, setTsReset] = useState(0);
+  const [pendingFile, setPendingFile] = useState(null);
 
   if (loading) return <PageSkeleton />;
   if (!user) return <Navigate to="/" replace />;
   if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 
-  async function onFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setBusy(true); setError(null);
+  async function processSelectedFile(file) {
+    setBusy(true);
+    setError(null);
     try {
       const { file_uri, size } = await uploadPrivateFile("image", file, tsToken);
-      setTsToken("");
-      setTsReset((r) => r + 1);
       setFileUri(file_uri);
       setFileSize(size);
       setPreviewUrl(URL.createObjectURL(file));
+      setPendingFile(null);
     } catch (err) {
+      setError(err?.message || "Couldn't upload the image. Try again.");
+    } finally {
       setTsToken("");
       setTsReset((r) => r + 1);
-      setError(err?.message || "Couldn't upload the image. Try again.");
+      setBusy(false);
     }
-    setBusy(false);
   }
+
+  async function onFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    // Keep the picker usable even before Turnstile finishes. The file is not
+    // uploaded or processed until the server-verifiable token is available.
+    if (!tsBypass && !tsToken) {
+      setPendingFile(file);
+      setError("Complete the security check above; the selected photo will upload automatically.");
+      return;
+    }
+
+    await processSelectedFile(file);
+  }
+
+  useEffect(() => {
+    if (!pendingFile || busy || (!tsBypass && !tsToken)) return;
+    processSelectedFile(pendingFile);
+  }, [pendingFile, busy, tsBypass, tsToken]);
 
   async function analyze() {
     if (!text.trim() && !fileUri) return;
@@ -93,12 +114,17 @@ export default function StudyLens() {
           />
         ) : (
           <div>
-            <Turnstile action={TURNSTILE_ACTIONS.upload} onVerify={setTsToken} onBypass={() => setTsBypass(true)} resetKey={tsReset} className="mb-3" />
-            <label className={`block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center ${(!tsBypass && !tsToken) ? "opacity-50 pointer-events-none" : "cursor-pointer hover:bg-secondary/40"}`}>
+            <Turnstile action={TURNSTILE_ACTIONS.upload} onVerify={(token) => { setTsToken(token); if (token) setError(null); }} onBypass={() => setTsBypass(true)} resetKey={tsReset} className="mb-3" />
+            {(!tsBypass && !tsToken) && (
+              <div className="mb-3 rounded-lg border border-border bg-secondary/40 px-3 py-2 text-[11px] text-muted-foreground">
+                Complete the security check above before the photo is sent for malware scanning.
+              </div>
+            )}
+            <label className={`block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center ${busy ? "opacity-50 pointer-events-none" : "cursor-pointer hover:bg-secondary/40"}`}>
               <ImagePlus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
               <div className="text-sm text-foreground">{fileUri ? "Image uploaded ✓ — tap to replace" : "Tap to upload a photo of the problem"}</div>
               <div className="text-[11px] text-muted-foreground mt-1">JPG, PNG, or WEBP — up to 3.5 MB</div>
-              <input type="file" accept="image/*" onChange={onFile} className="hidden" />
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} disabled={busy} className="hidden" />
             </label>
             {previewUrl && <img src={previewUrl} alt="preview" className="mt-3 max-h-48 rounded-lg border border-border" />}
           </div>
