@@ -1,0 +1,59 @@
+{
+  "name": "PromoCode",
+  "type": "object",
+  "description": "Server-managed one-time StudyOS entitlement codes. Code values are never stored in plaintext; only SHA-256 hashes are persisted.",
+  "properties": {
+    "code_hash": {
+      "type": "string"
+    },
+    "code_hint": {
+      "type": "string"
+    },
+    "grant_plan": {
+      "type": "string",
+      "enum": [
+        "pro",
+        "elite"
+      ],
+      "default": "elite"
+    },
+    "duration_days": {
+      "type": "integer",
+      "default": 30
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "redeemed_by_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "code_hash",
+    "grant_plan",
+    "duration_days"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
