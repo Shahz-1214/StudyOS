@@ -150,6 +150,7 @@ export default function ExamPilot() {
       <div className="flex gap-2 mb-4">
         <button onClick={() => setTab("exam")} className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold ${tab === "exam" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
           <Target className="w-4 h-4" /> Adaptive exam
+          <span className="ml-1 text-[9px] font-bold uppercase tracking-wide rounded-full border border-current/30 px-1.5 py-0.5">Pro</span>
         </button>
         <button onClick={() => setTab("plan")} className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold ${tab === "plan" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
           <ClipboardList className="w-4 h-4" /> Study plan
