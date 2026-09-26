@@ -109,7 +109,7 @@ export default function LectureMind() {
           <label className={`block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center ${(!tsBypass && !tsToken) ? "opacity-50 pointer-events-none" : "cursor-pointer hover:bg-secondary/40"}`}>
             <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
             <div className="text-sm text-foreground">{audioUri ? "Audio uploaded ✓ — tap to replace" : "Tap to upload an audio recording"}</div>
-            <div className="text-[11px] text-muted-foreground mt-1">mp3, wav, m4a, ogg — up to 25MB</div>
+            <div className="text-[11px] text-muted-foreground mt-1">mp3, wav, m4a, ogg, flac — up to 3.5 MB</div>
             <input type="file" accept="audio/*" onChange={onFile} className="hidden" />
           </label>
           <div className="flex justify-end mt-4">
