@@ -13,6 +13,11 @@ const AUDIO_TYPES = [
   "audio/webm", "audio/flac", "audio/x-flac",
 ];
 
+// Launch-time scanner ceiling for Cloudmersive Free. The server enforces the
+// same ceiling independently; this client check only avoids uploading files
+// that the scanner will inevitably reject.
+const CLOUDMERSIVE_MAX_BYTES = 3_500_000;
+
 export function validateClientFile(kind: "image" | "audio", file: File) {
   const allow = kind === "image" ? IMAGE_TYPES : AUDIO_TYPES;
   const max = kind === "image" ? 10 * 1024 * 1024 : 25 * 1024 * 1024;
@@ -21,6 +26,9 @@ export function validateClientFile(kind: "image" | "audio", file: File) {
   }
   if (file.size > max) {
     return { ok: false as const, error: `File too large. Max ${Math.round(max / 1024 / 1024)}MB.` };
+  }
+  if (file.size > CLOUDMERSIVE_MAX_BYTES) {
+    return { ok: false as const, error: "This file is too large for the current security scanner. Please upload a file smaller than 3.5 MB." };
   }
   return { ok: true as const };
 }
