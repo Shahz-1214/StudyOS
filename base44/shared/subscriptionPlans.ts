@@ -5,19 +5,22 @@
 export const PLAN_LIMITS = {
   free: {
     standardDaily: 10,
-    premiumDaily: 5,
+    premiumAllowance: 15,
+    premiumReset: "monthly",
     aiPerMinute: 3,
     premiumPerTenMinutes: 1,
   },
   pro: {
     standardDaily: 50,
-    premiumDaily: 20,
+    premiumAllowance: 12,
+    premiumReset: "weekly",
     aiPerMinute: 6,
     premiumPerTenMinutes: 3,
   },
   elite: {
     standardDaily: 120,
-    premiumDaily: 60,
+    premiumAllowance: 36,
+    premiumReset: "weekly",
     aiPerMinute: 10,
     premiumPerTenMinutes: 5,
   },
@@ -49,4 +52,27 @@ export function getNextUtcReset(now = new Date()) {
   const next = new Date(now);
   next.setUTCHours(24, 0, 0, 0);
   return next;
+}
+
+export function getPremiumPeriodStart(now = new Date(), plan: StudyOSPlan = "free") {
+  if (PLAN_LIMITS[plan].premiumReset === "monthly") {
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  }
+
+  // Paid premium credits restock on a server-defined UTC week (Monday 00:00).
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const weekday = start.getUTCDay();
+  const daysSinceMonday = (weekday + 6) % 7;
+  start.setUTCDate(start.getUTCDate() - daysSinceMonday);
+  return start;
+}
+
+export function getNextPremiumReset(now = new Date(), plan: StudyOSPlan = "free") {
+  if (PLAN_LIMITS[plan].premiumReset === "monthly") {
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  }
+
+  const start = getPremiumPeriodStart(now, plan);
+  start.setUTCDate(start.getUTCDate() + 7);
+  return start;
 }
