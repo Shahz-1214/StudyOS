@@ -31,7 +31,7 @@ export default async function(req) {
       imageUrl = await createSignedFileUrl(base44, approved.record.sanitized_uri || fileUri, 180);
     }
 
-    const guard = await enforceAIQuota(base44);
+    const guard = await enforceAIQuota(base44, "ai_request_started", "studylens");
     if (guard) return guard;
 
     const ctx = await buildLearnerContext(base44);
