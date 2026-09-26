@@ -5,8 +5,8 @@
 // code. A file becomes processable ONLY after the scanUploadedMedia pipeline
 // records status 'approved' for the authenticated owner: content-based type
 // detection, size/structure limits, archive and active-content rejection, a
-// real malware scan (self-hosted ClamAV bridge — ClamAV cannot run inside the
-// Base44 runtime, so the gate FAILS CLOSED while no bridge is configured), and
+// real malware scan (Cloudmersive Virus Scan API; the gate FAILS CLOSED if the
+// scanner is unavailable), and
 // a safe derivative. Filenames, extensions, and declared MIME types are never
 // trusted for classification — the bytes are.
 
@@ -36,9 +36,14 @@ export async function createSignedFileUrl(base44: any, fileUri: string, expiresI
   return r.signed_url as string;
 }
 
-// Read the quarantined original from private storage with a hard byte cap.
+// Read the quarantined original with the caller's storage permissions and a
+// hard byte cap. This prevents the service role from being used to read an
+// arbitrary private URI supplied by a caller. Service-role signing is reserved
+// for already-approved media downstream.
 export async function readQuarantinedBytes(base44: any, fileUri: string, maxBytes: number) {
-  const signedUrl = await createSignedFileUrl(base44, fileUri, 180);
+  const signed = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: fileUri, expires_in: 180 });
+  const signedUrl = String(signed?.signed_url || '');
+  if (!signedUrl) return { ok: false as const, code: "SOURCE_SIGN_URL_FAILED" };
   const res = await fetch(signedUrl);
   if (!res.ok) return { ok: false as const, code: "SOURCE_READ_FAILED" };
   const declaredLen = Number(res.headers.get("content-length") || 0);
