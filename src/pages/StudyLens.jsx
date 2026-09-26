@@ -27,6 +27,15 @@ export default function StudyLens() {
   const [tsReset, setTsReset] = useState(0);
   const [pendingFile, setPendingFile] = useState(null);
 
+  // Hooks must run before any conditional render. If a photo is selected
+  // before Turnstile is ready, keep it only in memory and release it through
+  // the normal upload-security pipeline once the server-verifiable token is
+  // available.
+  useEffect(() => {
+    if (!pendingFile || busy || (!tsBypass && !tsToken)) return;
+    processSelectedFile(pendingFile);
+  }, [pendingFile, busy, tsBypass, tsToken]);
+
   if (loading) return <PageSkeleton />;
   if (!user) return <Navigate to="/" replace />;
   if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
@@ -68,11 +77,6 @@ export default function StudyLens() {
 
     await processSelectedFile(file);
   }
-
-  useEffect(() => {
-    if (!pendingFile || busy || (!tsBypass && !tsToken)) return;
-    processSelectedFile(pendingFile);
-  }, [pendingFile, busy, tsBypass, tsToken]);
 
   async function analyze() {
     if (!text.trim() && !fileUri) return;
