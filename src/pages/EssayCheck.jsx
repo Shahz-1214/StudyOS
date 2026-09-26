@@ -61,6 +61,7 @@ export default function EssayCheck() {
         <div className="eyebrow">Study · Stage 5</div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mt-1 flex items-center gap-2">
           <PenLine className="w-6 h-6 text-primary" /> EssayCheck
+          <span className="text-[9px] font-bold uppercase tracking-wide rounded-full border border-primary/30 text-primary px-2 py-1">Pro · 1 credit</span>
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Grammar, structure, argument, and readability analysis with targeted feedback. Your voice stays yours — no auto-rewrite.</p>
       </div>
