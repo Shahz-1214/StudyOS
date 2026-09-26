@@ -10,9 +10,8 @@ import { verifyTurnstileToken } from '../../shared/turnstileVerify.ts';
 // Pipeline (fail closed at every stage):
 //   QUARANTINE (private storage) -> SHA-256 -> content-based type detection ->
 //   size/structure limits -> archive & active-content rejection ->
-//   MALWARE SCAN (self-hosted ClamAV bridge; ClamAV cannot run inside the
-//   Base44 runtime, so while no bridge is configured this stage fails closed
-//   and the file is NEVER approved) -> SANITIZATION / safe derivative ->
+//   MALWARE SCAN (Cloudmersive Virus Scan API; fails closed when not configured
+//   or when the scanner cannot safely process the file) -> SANITIZATION / safe derivative ->
 //   APPROVED (recorded server-side only; users cannot forge it).
 //
 // The quarantined original is never executed, rendered, or sent to AI. Only
@@ -172,30 +171,37 @@ export default async function(req) {
       recordId = created.id;
     }
 
-    // Stage 4: malware scan via a self-hosted ClamAV bridge. ClamAV cannot
-    // run inside the Base44 runtime; when no bridge is configured this stage
-    // FAILS CLOSED and the file is never approved. Scanner failures,
-    // malformed responses and timeouts also fail closed.
-    const scannerUrl = getSecret('CLAMAV_REST_URL');
-    if (!scannerUrl) {
+    // Stage 4: malware scan via Cloudmersive Virus Scan API. The API accepts
+    // multipart/form-data at /virus/scan/file with the Apikey header. The
+    // Cloudmersive free tier currently limits files to 3.5 MB, so files above
+    // that scanner limit fail closed rather than bypassing malware scanning.
+    const cloudmersiveKey = getSecret('CLOUDMERSIVE_API_KEY');
+    const CLOUDMERSIVE_URL = 'https://api.cloudmersive.com/virus/scan/file';
+    const CLOUDMERSIVE_MAX_BYTES = 3.5 * 1024 * 1024;
+    if (!cloudmersiveKey || bytes.byteLength > CLOUDMERSIVE_MAX_BYTES) {
       await base44.asServiceRole.entities.MediaSecurityScan.update(recordId, {
         status: 'scan_error',
-        rejection_reason_code: 'SCANNER_UNAVAILABLE',
+        rejection_reason_code: !cloudmersiveKey ? 'SCANNER_UNAVAILABLE' : 'SCANNER_FILE_TOO_LARGE',
         scan_timestamp: new Date().toISOString(),
       });
-      return json({ ok: false, error: GENERIC_UNAVAILABLE, code: 'SCANNER_UNAVAILABLE' }, 503);
+      return json({ ok: false, error: GENERIC_UNAVAILABLE, code: !cloudmersiveKey ? 'SCANNER_UNAVAILABLE' : 'SCANNER_FILE_TOO_LARGE' }, 503);
     }
-    const scannerToken = getSecret('CLAMAV_REST_TOKEN');
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), SCAN_TIMEOUT_MS);
     let report = null;
     try {
-      const headers = { 'content-type': 'application/octet-stream' };
-      if (scannerToken) headers['authorization'] = 'Bearer ' + scannerToken;
-      const scanRes = await fetch(scannerUrl, { method: 'POST', headers, body: bytes, signal: controller.signal });
+      const form = new FormData();
+      const file = new File([bytes], originalFilename || ('upload.' + detected), { type: declaredMime || 'application/octet-stream' });
+      form.append('inputFile', file);
+      const scanRes = await fetch(CLOUDMERSIVE_URL, {
+        method: 'POST',
+        headers: { Apikey: cloudmersiveKey },
+        body: form,
+        signal: controller.signal,
+      });
       if (!scanRes.ok) throw new Error('scanner_http_' + scanRes.status);
       report = await scanRes.json();
-      if (!report || typeof report.clean !== 'boolean') throw new Error('scanner_bad_payload');
+      if (!report || typeof report.CleanResult !== 'boolean') throw new Error('scanner_bad_payload');
     } catch {
       await base44.asServiceRole.entities.MediaSecurityScan.update(recordId, {
         status: 'scan_error',
@@ -208,16 +214,22 @@ export default async function(req) {
     }
 
     const scanTimestamp = new Date().toISOString();
-    const scannerName = String(report.scanner || 'clamav-bridge').slice(0, 100);
+    const scannerName = 'cloudmersive-virus-scan';
+    const foundViruses = Array.isArray(report.FoundViruses) ? report.FoundViruses : [];
 
-    if (report.clean !== true) {
+    if (report.CleanResult !== true) {
+      const signature = foundViruses
+        .map((v) => String(v?.VirusName || '').trim())
+        .filter(Boolean)
+        .slice(0, 3)
+        .join(', ');
       await base44.asServiceRole.entities.MediaSecurityScan.update(recordId, {
         status: 'infected',
         malware_detected: true,
         scanner_name: scannerName,
-        scanner_id: String(report.id || '').slice(0, 100),
-        scanner_version: String(report.definitions || '').slice(0, 100),
-        detected_signature: String(report.signature || '').slice(0, 200),
+        scanner_id: String(report.ContentInformation?.Hash_SHA1 || '').slice(0, 100),
+        scanner_version: '',
+        detected_signature: signature.slice(0, 200),
         rejection_reason_code: 'MALWARE_DETECTED',
         scan_timestamp: scanTimestamp,
       });
