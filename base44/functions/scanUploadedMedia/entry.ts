@@ -177,14 +177,20 @@ export default async function(req) {
     // that scanner limit fail closed rather than bypassing malware scanning.
     const cloudmersiveKey = getSecret('CLOUDMERSIVE_API_KEY');
     const CLOUDMERSIVE_URL = 'https://api.cloudmersive.com/virus/scan/file';
-    const CLOUDMERSIVE_MAX_BYTES = 3.5 * 1024 * 1024;
+    const CLOUDMERSIVE_MAX_BYTES = 3_500_000;
     if (!cloudmersiveKey || bytes.byteLength > CLOUDMERSIVE_MAX_BYTES) {
       await base44.asServiceRole.entities.MediaSecurityScan.update(recordId, {
         status: 'scan_error',
         rejection_reason_code: !cloudmersiveKey ? 'SCANNER_UNAVAILABLE' : 'SCANNER_FILE_TOO_LARGE',
         scan_timestamp: new Date().toISOString(),
       });
-      return json({ ok: false, error: GENERIC_UNAVAILABLE, code: !cloudmersiveKey ? 'SCANNER_UNAVAILABLE' : 'SCANNER_FILE_TOO_LARGE' }, 503);
+      return json({
+        ok: false,
+        error: !cloudmersiveKey
+          ? GENERIC_UNAVAILABLE
+          : 'This file is too large for the current security scanner. Please upload a file smaller than 3.5 MB.',
+        code: !cloudmersiveKey ? 'SCANNER_UNAVAILABLE' : 'SCANNER_FILE_TOO_LARGE',
+      }, 503);
     }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), SCAN_TIMEOUT_MS);
