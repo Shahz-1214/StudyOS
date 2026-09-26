@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 
 // Entitlement abstraction. Loads the user's server-managed subscription state,
-// daily standard-AI usage, premium Pro-credit usage, and next daily reset.
+// daily standard-AI usage, premium Pro-credit usage, and plan-specific reset timers.
 export function useEntitlement() {
   const [entitlement, setEntitlement] = useState(null);
   const [loading, setLoading] = useState(true);
