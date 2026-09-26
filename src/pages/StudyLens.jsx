@@ -41,6 +41,10 @@ export default function StudyLens() {
       setPreviewUrl(URL.createObjectURL(file));
       setPendingFile(null);
     } catch (err) {
+      // Do not retain a rejected/failed file for a later Turnstile token.
+      // This prevents an unsafe or failed selection from being retried
+      // implicitly after a security-check refresh.
+      setPendingFile(null);
       setError(err?.message || "Couldn't upload the image. Try again.");
     } finally {
       setTsToken("");
