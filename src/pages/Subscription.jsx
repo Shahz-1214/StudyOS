@@ -19,7 +19,7 @@ const PLANS = [
     description: "A useful daily allowance with real access to the full study system.",
     features: [
       "10 standard AI actions / day",
-      "5 Pro credits / day",
+      "15 Pro credits / month",
       "All core study tools",
       "Progress, quizzes and study plans",
     ],
@@ -34,7 +34,7 @@ const PLANS = [
     description: "For students who use AI regularly without needing a large monthly bill.",
     features: [
       "50 standard AI actions / day",
-      "20 Pro credits / day",
+      "12 Pro credits / week",
       "All 5 premium AI features",
       "Higher burst limits",
     ],
@@ -48,7 +48,7 @@ const PLANS = [
     description: "For heavy study weeks and frequent AI-assisted revision.",
     features: [
       "120 standard AI actions / day",
-      "60 Pro credits / day",
+      "36 Pro credits / week",
       "All 5 premium AI features",
       "Highest launch-time rate limits",
     ],
@@ -87,6 +87,13 @@ export default function Subscription() {
     () => (resetAt ? formatCountdown(resetAt - now) : "--:--:--"),
     [resetAt, now]
   );
+  const premiumResetAt = entitlement?.next_premium_reset_at
+    ? new Date(entitlement.next_premium_reset_at).getTime()
+    : 0;
+  const premiumCountdown = useMemo(
+    () => (premiumResetAt ? formatCountdown(premiumResetAt - now) : "--:--:--"),
+    [premiumResetAt, now]
+  );
 
   if (loading || entLoading) {
     return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
@@ -104,7 +111,7 @@ export default function Subscription() {
           <CreditCard className="w-6 h-6 text-primary" /> Subscription
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          A simple three-tier system with capped AI budgets. Premium features stay available to everyone through daily Pro credits.
+          A three-tier system with separate standard AI and premium Pro-credit budgets. Free credits restock monthly; paid credits restock weekly.
         </p>
       </div>
 
@@ -113,15 +120,21 @@ export default function Subscription() {
           <div>
             <div className="flex items-center gap-2 text-sm font-bold text-foreground">
               <Timer className="w-4 h-4 text-primary" />
-              Daily allowance refresh
+              Credit restock schedule
             </div>
             <p className="text-[12px] text-muted-foreground mt-1">
-              Your standard actions and Pro credits refresh automatically at the next daily reset.
+              Standard AI refreshes daily. Pro credits restock monthly on Free and weekly on paid plans.
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Resets in</span>
-            <span className="font-mono text-sm font-bold text-foreground tabular-nums">{countdown}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
+              <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Standard resets</span>
+              <span className="font-mono text-sm font-bold text-foreground tabular-nums">{countdown}</span>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+              <span className="text-[11px] uppercase tracking-wide text-muted-foreground">Pro restock</span>
+              <span className="font-mono text-sm font-bold text-foreground tabular-nums">{premiumCountdown}</span>
+            </div>
           </div>
         </div>
 
@@ -135,7 +148,7 @@ export default function Subscription() {
           <div className="rounded-lg bg-secondary/50 px-3 py-3">
             <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Pro credits</div>
             <div className="mt-1 text-lg font-bold text-foreground">
-              {entitlement?.premium_remaining ?? 0} <span className="text-xs font-medium text-muted-foreground">/ {entitlement?.premium_limit ?? 0} left</span>
+              {entitlement?.premium_remaining ?? 0} <span className="text-xs font-medium text-muted-foreground">/ {entitlement?.premium_limit ?? 0} left · {entitlement?.premium_reset_type ?? "monthly"}</span>
             </div>
           </div>
         </div>
