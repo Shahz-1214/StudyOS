@@ -47,7 +47,11 @@ export default function LectureMind() {
       setAudioUri(file_uri);
       setAudioSize(size);
       if (!title) setTitle(file.name.replace(/\.[^.]+$/, ""));
-    } catch (err) { setError(err?.message || "Couldn't upload the audio."); }
+    } catch (err) {
+      setTsToken("");
+      setTsReset((r) => r + 1);
+      setError(err?.message || "Couldn't upload the audio.");
+    }
     setBusy(false);
   }
 
