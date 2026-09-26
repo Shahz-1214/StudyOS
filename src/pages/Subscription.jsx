@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
+import { base44 } from "@/api/base44Client";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { useEntitlement } from "@/hooks/useEntitlement";
 import StudyPanel from "@/components/StudyPanel";
 import {
   Loader2, CreditCard, Sparkles, Check, Zap, Crown, Timer,
-  ScanLine, Headphones, BrainCircuit, FileCheck2, Target, LockKeyhole
+  ScanLine, Headphones, BrainCircuit, FileCheck2, Target, LockKeyhole, KeyRound
 } from "lucide-react";
 
 const PLANS = [
@@ -76,6 +77,10 @@ export default function Subscription() {
   const { profile, loading } = useStudyOSData();
   const { entitlement, loading: entLoading } = useEntitlement();
   const [now, setNow] = useState(Date.now());
+  const [accessCode, setAccessCode] = useState("");
+  const [redeemingCode, setRedeemingCode] = useState(false);
+  const [codeMessage, setCodeMessage] = useState("");
+  const [codeError, setCodeError] = useState("");
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -102,6 +107,34 @@ export default function Subscription() {
   if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 
   const currentPlan = entitlement?.plan || "free";
+
+  async function redeemCode(event) {
+    event.preventDefault();
+    setCodeError("");
+    setCodeMessage("");
+    const code = accessCode.trim().toUpperCase();
+    if (!code) {
+      setCodeError("Enter your access code.");
+      return;
+    }
+
+    setRedeemingCode(true);
+    try {
+      const res = await base44.functions.invoke("redeemStudyOSCode", { code });
+      setCodeMessage(res?.data?.message || "Paid access activated.");
+      setAccessCode("");
+      await entitlement.refresh();
+    } catch (error) {
+      setCodeError(
+        error?.response?.data?.error ||
+        error?.data?.error ||
+        error?.message ||
+        "That access code could not be redeemed."
+      );
+    } finally {
+      setRedeemingCode(false);
+    }
+  }
 
   return (
     <div className="max-w-[1040px] mx-auto px-5 md:px-8 py-6 md:py-8">
@@ -220,6 +253,48 @@ export default function Subscription() {
               </div>
             );
           })}
+        </div>
+      </StudyPanel>
+
+      <StudyPanel className="p-5 mt-5">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-secondary grid place-items-center shrink-0">
+            <KeyRound className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1">
+            <div className="eyebrow">Have an access code?</div>
+            <h2 className="text-lg font-bold text-foreground mt-1">Redeem paid access</h2>
+            <p className="text-[12px] text-muted-foreground mt-1">
+              Enter a valid StudyOS access code to activate its server-issued plan entitlement.
+            </p>
+
+            <form onSubmit={redeemCode} className="flex flex-col sm:flex-row gap-2 mt-4">
+              <input
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                autoComplete="off"
+                spellCheck={false}
+                maxLength={64}
+                placeholder="STUDYOS-PRO-XXXXXXXXXXXXXXXX"
+                className="flex-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-mono text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                aria-label="StudyOS access code"
+              />
+              <button
+                type="submit"
+                disabled={redeemingCode || !accessCode.trim()}
+                className="rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+              >
+                {redeemingCode ? "Redeeming…" : "Redeem code"}
+              </button>
+            </form>
+
+            {codeMessage && (
+              <div className="mt-3 text-xs font-semibold text-primary" role="status">{codeMessage}</div>
+            )}
+            {codeError && (
+              <div className="mt-3 text-xs font-semibold text-destructive" role="alert">{codeError}</div>
+            )}
+          </div>
         </div>
       </StudyPanel>
 
