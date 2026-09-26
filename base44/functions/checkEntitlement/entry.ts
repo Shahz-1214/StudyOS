@@ -1,7 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-
-const AI_EVENTS = ["ai_request_started", "studylens_used", "homework_started", "quiz_generated", "lecture_processed", "essay_analyzed", "exam_created", "weakness_updated"];
-const FREE_LIMIT = 15;
+import { PLAN_LIMITS, resolveEffectivePlan, getNextUtcReset, PREMIUM_FEATURES } from '../../shared/subscriptionPlans.ts';
 
 export default async function(req) {
   try {
@@ -9,32 +7,51 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // SubscriptionState is admin-only for create/update/delete (RLS), so the
-    // plan/status fields are server-managed and cannot be self-upgraded by the
-    // caller. Absence of a record means free — we do not seed a record here.
+    // SubscriptionState is server-managed. The absence of a record, a cancelled
+    // state, or an expired entitlement always resolves to the free plan.
     const subs = await base44.entities.SubscriptionState.list("-created_date", 1);
     const sub = subs[0];
     const now = Date.now();
-    const isPro = !!sub && (sub.plan === "pro" || sub.plan === "elite") && ["active", "trialing"].includes(sub.status) && (!sub.expires_at || new Date(sub.expires_at).getTime() > now);
+    const plan = resolveEffectivePlan(sub, now);
+    const limits = PLAN_LIMITS[plan];
 
-    // Count today's AI usage from the Event log (user-scoped via RLS).
-    // Read only AI-accounting events so unrelated filler events cannot evict
-    // quota rows from the window. Combined with admin-only delete on Event,
-    // the daily count cannot be reset by deletion or flooding.
-    const events = await base44.entities.Event.filter({ event_name: { $in: AI_EVENTS } }, "-occurred_at", 100);
-    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-    const used = events.filter((e) => AI_EVENTS.includes(e.event_name) && new Date(e.occurred_at) >= todayStart).length;
+    // Only server quota events count here. Frontend analytics events do not
+    // consume credits and therefore cannot accidentally inflate usage.
+    const events = await base44.entities.Event.filter(
+      { event_name: { $in: ["ai_request_started", "premium_ai_action"] } },
+      "-occurred_at",
+      250
+    );
+    const dayStart = new Date();
+    dayStart.setUTCHours(0, 0, 0, 0);
+    const dayStartMs = dayStart.getTime();
+
+    const today = (events || []).filter(
+      (e) => new Date(e.occurred_at).getTime() >= dayStartMs
+    );
+    const standardUsed = today.filter((e) => e.event_name === "ai_request_started").length;
+    const premiumUsed = today.filter((e) => e.event_name === "premium_ai_action").length;
+    const premiumRemaining = Math.max(0, limits.premiumDaily - premiumUsed);
+    const standardRemaining = Math.max(0, limits.standardDaily - standardUsed);
 
     return Response.json({
-      plan: sub?.plan || "free",
+      plan,
       status: sub?.status || "active",
-      is_pro: isPro,
-      ai_used_today: used,
-      ai_limit: isPro ? null : FREE_LIMIT,
-      remaining: isPro ? null : Math.max(0, FREE_LIMIT - used),
+      is_pro: plan !== "free",
+      ai_used_today: standardUsed,
+      ai_limit: limits.standardDaily,
+      remaining: standardRemaining,
+      premium_used_today: premiumUsed,
+      premium_limit: limits.premiumDaily,
+      premium_remaining: premiumRemaining,
+      premium_features: Object.entries(PREMIUM_FEATURES).map(([id, name]) => ({ id, name, cost: 1 })),
+      ai_per_minute: limits.aiPerMinute,
+      premium_per_ten_minutes: limits.premiumPerTenMinutes,
+      next_reset_at: getNextUtcReset(new Date()).toISOString(),
       expires_at: sub?.expires_at || null,
+      trial_ends_at: sub?.trial_ends_at || null,
     });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error?.message || "Could not load subscription state." }, { status: 500 });
   }
 }
