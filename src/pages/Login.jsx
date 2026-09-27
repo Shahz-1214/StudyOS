@@ -23,7 +23,7 @@ function friendlyAuthError(error) {
   if (error?.status === 403) {
     return "This account needs verification or is not currently permitted to sign in.";
   }
-  return error?.message || "We couldn't complete sign-in. Please try again.";
+  return "We couldn't complete sign-in. Please try again.";
 }
 
 export default function Login() {
