@@ -15,7 +15,7 @@ export default class PageErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    console.error("StudyOS page error:", error, info);
+    // Production error details are intentionally not written to the browser console.
   }
 
   handleRetry = () => {
