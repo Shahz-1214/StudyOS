@@ -130,7 +130,7 @@ export default function Register() {
       setOtpStartedAt(Date.now());
       setOtpRemaining(OTP_UI_TTL_MS);
     } catch (err) {
-      setError(err.message || "Registration failed. Please try again.");
+      setError(err?.status === 429 ? "Too many registration requests. Please wait and try again." : err?.status === 400 || err?.status === 422 ? "The registration details were not accepted. Please check them and try again." : "Registration failed. Please try again.");
       setSignupReset((r) => r + 1);
     } finally {
       setLoading(false);
@@ -161,7 +161,7 @@ export default function Register() {
       }
       window.location.href = returnTo;
     } catch (err) {
-      setError(err?.status === 429 ? "Too many verification attempts. Please wait before trying again." : (err.message || "Invalid or expired verification code."));
+      setError(err?.status === 429 ? "Too many verification attempts. Please wait before trying again." : err?.status === 400 || err?.status === 422 ? "Invalid or expired verification code." : "We couldn't verify the code. Please try again.");
       setOtpReset((r) => r + 1);
     } finally {
       setLoading(false);
@@ -193,7 +193,7 @@ export default function Register() {
       setOtpReset((r) => r + 1);
       toast({ title: "New code sent", description: "Check your email for the latest verification code." });
     } catch (err) {
-      setError(err?.status === 429 ? "Too many code requests. Please wait before requesting another." : (err.message || "Failed to resend code."));
+      setError(err?.status === 429 ? "Too many code requests. Please wait before requesting another." : "We couldn't resend the code. Please try again.");
       setOtpReset((r) => r + 1);
     } finally {
       setResendBusy(false);
