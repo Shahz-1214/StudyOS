@@ -142,8 +142,8 @@ export default function Onboarding() {
       await track(EVENTS.ONBOARDING_COMPLETED, {});
       await reload();
       navigate("/");
-    } catch (e) {
-      setErr(e?.message || "Could not save your profile. Please try again.");
+    } catch {
+      setErr("Could not save your profile. Please try again.");
       setSaving(false);
     }
   };
