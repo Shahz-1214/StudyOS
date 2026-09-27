@@ -105,8 +105,8 @@ export function useStudyOSData() {
       setConcepts((cons || []).filter((c) => !c.archived && activeSubjectIds.has(c.subject_id)));
       setEvents(evs || []);
       setExams(learnerExams || []);
-    } catch (err) {
-      setError(err);
+    } catch {
+      setError(new Error("Could not load StudyOS data."));
     }
     setLoading(false);
   }, [user]);
