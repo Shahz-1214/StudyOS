@@ -27,6 +27,14 @@
     },
     "redeemed_by_id": {
       "type": "string"
+    },
+    "claimed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "claim_id": {
+      "type": "string",
+      "default": ""
     }
   },
   "required": [
