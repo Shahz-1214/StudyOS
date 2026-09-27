@@ -13,36 +13,30 @@ function json(data: any, status = 200) {
   return Response.json(data, { status });
 }
 
+const CLAIM_TTL_MS = 10 * 60 * 1000;
+
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (!user) return json({ error: 'Unauthorized' }, 401);
+    if (!user) return json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, 401);
 
     const body = await req.json().catch(() => ({}));
     const normalizedCode = String(body?.code || '').trim().toUpperCase();
-
     if (!/^[A-Z0-9-]{12,64}$/.test(normalizedCode)) {
       return json({ error: 'Enter a valid StudyOS access code.', code: 'INVALID_CODE' }, 400);
     }
 
-    // Protect the redemption endpoint from brute-force guessing.
-    const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const attempts = await base44.entities.Event.filter(
       { event_name: 'promo_code_attempt' },
       '-occurred_at',
-      20
+      30
     );
-    const recentAttempts = (attempts || []).filter(
-      (event) => new Date(event.occurred_at).getTime() >= new Date(hourAgo).getTime()
-    );
+    const cutoff = Date.now() - 60 * 60 * 1000;
+    const recentAttempts = (attempts || []).filter((event) => new Date(event.occurred_at).getTime() >= cutoff);
     if (recentAttempts.length >= 10) {
-      return json({
-        error: 'Too many code attempts. Please try again later.',
-        code: 'PROMO_RATE_LIMITED',
-      }, 429);
+      return json({ error: 'Too many code attempts. Please try again later.', code: 'PROMO_RATE_LIMITED' }, 429);
     }
-
     await base44.entities.Event.create({
       event_name: 'promo_code_attempt',
       properties: { source: 'server_promo_redemption' },
@@ -51,76 +45,104 @@ export default async function(req) {
 
     const codeHash = await sha256Hex(normalizedCode);
     const definition = CODE_DEFINITIONS[codeHash];
-
-    // Never reveal whether an unknown code exists.
     if (!definition) {
       return json({ error: 'That access code is invalid or has already been used.', code: 'INVALID_OR_USED_CODE' }, 400);
     }
 
-    let matches = await base44.asServiceRole.entities.PromoCode.filter(
+    const matches = await base44.asServiceRole.entities.PromoCode.filter(
       { code_hash: codeHash },
       '-created_date',
       10
     );
-
-    // Codes are provisioned lazily in the protected backend. This avoids keeping plaintext
-    // codes in the database while still giving the operator a fixed set of one-time codes.
     if (!matches?.length) {
-      const created = await base44.asServiceRole.entities.PromoCode.create({
-        code_hash: codeHash,
-        code_hint: definition.hint,
-        grant_plan: definition.plan,
-        duration_days: definition.duration,
-      });
-      matches = [created];
+      // Codes are provisioned ahead of time so redemption itself never races
+      // on first-use database initialization.
+      return json({ error: 'That access code is invalid or has already been used.', code: 'INVALID_OR_USED_CODE' }, 400);
     }
-
-    // Treat the code as globally consumed if any matching ledger row is used.
-    // This also makes duplicate initialization rows fail closed.
-    const promo = matches.find((item) => !item.used_at);
-    if (matches.some((item) => item.used_at) || !promo) {
+    if (matches.some((item) => item.used_at)) {
       return json({ error: 'That access code is invalid or has already been used.', code: 'INVALID_OR_USED_CODE' }, 400);
     }
 
-    const now = Date.now();
-    const durationMs = Math.max(1, Number(promo.duration_days || definition.duration || 30)) * 24 * 60 * 60 * 1000;
+    const promo = matches[0];
+    const claimId = crypto.randomUUID();
+    const claimNow = new Date();
+    const staleBefore = new Date(Date.now() - CLAIM_TTL_MS).toISOString();
 
-    const subscriptions = await base44.entities.SubscriptionState.list('-created_date', 1);
-    const current = subscriptions?.[0];
-    const currentExpiry = current?.expires_at ? new Date(current.expires_at).getTime() : 0;
-    const nextExpiry = new Date(Math.max(now, Number.isFinite(currentExpiry) ? currentExpiry : 0) + durationMs).toISOString();
+    // Reclaim only a stale, unused claim, then atomically claim exactly one
+    // record. updateMany uses a conditional filter so two concurrent redemptions
+    // cannot both own the same code.
+    await base44.asServiceRole.entities.PromoCode.updateMany(
+      { id: promo.id, used_at: null, claimed_at: { $lt: staleBefore } },
+      { $set: { claimed_at: null, claim_id: "" } }
+    ).catch(() => {});
 
-    const nextPlan = current?.plan === 'elite' ? 'elite' : promo.grant_plan;
-    const payload = {
-      plan: nextPlan,
-      status: 'active',
-      expires_at: nextExpiry,
-      trial_ends_at: null,
-    };
+    const claimed = await base44.asServiceRole.entities.PromoCode.updateMany(
+      { id: promo.id, used_at: null, claimed_at: null },
+      { $set: { claimed_at: claimNow.toISOString(), claim_id: claimId } }
+    );
 
-    if (current?.id) {
-      await base44.asServiceRole.entities.SubscriptionState.update(current.id, payload);
-    } else {
-      await base44.asServiceRole.entities.SubscriptionState.create({
-        ...payload,
-        created_by_id: user.id,
-      });
+    const claimedCount = Number(claimed?.count ?? claimed?.updated ?? claimed?.matched ?? 0);
+    if (claimedCount !== 1) {
+      const current = (await base44.asServiceRole.entities.PromoCode.filter({ id: promo.id }, '-updated_date', 1))?.[0];
+      if (current?.used_at) {
+        return json({ error: 'That access code is invalid or has already been used.', code: 'INVALID_OR_USED_CODE' }, 400);
+      }
+      return json({ error: 'That access code is currently being redeemed. Please try again shortly.', code: 'PROMO_BUSY' }, 409);
     }
 
-    await base44.asServiceRole.entities.PromoCode.update(promo.id, {
-      used_at: new Date().toISOString(),
-      redeemed_by_id: user.id,
-    });
+    try {
+      const durationDays = Math.max(1, Math.min(365, Number(promo.duration_days || definition.duration || 30)));
+      const durationMs = durationDays * 24 * 60 * 60 * 1000;
+      const subscriptions = await base44.entities.SubscriptionState.list('-created_date', 1);
+      const current = subscriptions?.[0];
+      const currentExpiry = current?.expires_at ? new Date(current.expires_at).getTime() : 0;
+      const safeCurrentExpiry = Number.isFinite(currentExpiry) ? currentExpiry : 0;
+      const nextExpiry = new Date(Math.max(Date.now(), safeCurrentExpiry) + durationMs).toISOString();
 
-    const displayPlan = nextPlan === 'elite' ? 'Pro' : 'Plus';
-    return json({
-      ok: true,
-      plan: nextPlan,
-      plan_name: displayPlan,
-      expires_at: nextExpiry,
-      message: `${displayPlan} access activated for ${promo.duration_days || 30} days.`,
-    });
-  } catch (error) {
-    return json({ error: error?.message || 'Could not redeem this access code.' }, 500);
+      const nextPlan = current?.plan === 'elite' ? 'elite' : promo.grant_plan;
+      const payload = {
+        plan: nextPlan,
+        status: 'active',
+        expires_at: nextExpiry,
+        trial_ends_at: null,
+      };
+
+      if (current?.id) {
+        await base44.asServiceRole.entities.SubscriptionState.update(current.id, payload);
+      } else {
+        await base44.asServiceRole.entities.SubscriptionState.create({
+          ...payload,
+          created_by_id: user.id,
+        });
+      }
+
+      const finalized = await base44.asServiceRole.entities.PromoCode.updateMany(
+        { id: promo.id, claim_id: claimId, used_at: null },
+        { $set: { used_at: new Date().toISOString(), redeemed_by_id: user.id, claimed_at: claimNow.toISOString() } }
+      );
+      const finalCount = Number(finalized?.count ?? finalized?.updated ?? finalized?.matched ?? 0);
+      if (finalCount !== 1) {
+        throw new Error('PROMO_FINALIZE_FAILED');
+      }
+
+      const displayPlan = nextPlan === 'elite' ? 'Pro' : 'Plus';
+      return json({
+        ok: true,
+        plan: nextPlan,
+        plan_name: displayPlan,
+        expires_at: nextExpiry,
+        message: displayPlan + ' access activated for ' + durationDays + ' days.',
+      });
+    } catch {
+      // Release only our claim; this cannot consume a code if entitlement
+      // activation failed.
+      await base44.asServiceRole.entities.PromoCode.updateMany(
+        { id: promo.id, claim_id: claimId, used_at: null },
+        { $set: { claimed_at: null, claim_id: "" } }
+      ).catch(() => {});
+      return json({ error: 'Could not redeem this access code. Please try again.', code: 'REDEMPTION_FAILED' }, 500);
+    }
+  } catch {
+    return json({ error: 'Could not redeem this access code. Please try again.', code: 'INTERNAL_ERROR' }, 500);
   }
 }
