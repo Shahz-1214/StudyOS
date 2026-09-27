@@ -12,7 +12,7 @@ export default class ErrorBoundary extends React.Component {
     return { hasError: true, error };
   }
   componentDidCatch(error, info) {
-    console.error("StudyOS error:", error, info);
+    // Production error details are intentionally not written to the browser console.
   }
 
   render() {
