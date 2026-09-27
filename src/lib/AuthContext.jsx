@@ -4,6 +4,16 @@ import { appParams } from '@/lib/app-params';
 
 const AuthContext = createContext();
 
+function safeAuthMessage(error, fallback) {
+  const status = Number(error?.status);
+  if (status === 401) return "Authentication required.";
+  if (status === 403) return "Access is not currently available for this account.";
+  if (status === 429) return "Too many requests. Please wait and try again.";
+  if (status === 400 || status === 422) return "The request was not accepted. Please check the information and try again.";
+  if (status >= 500) return "StudyOS is having trouble right now. Please try again.";
+  return fallback;
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -36,7 +46,7 @@ export const AuthProvider = ({ children }) => {
         }
         setIsLoadingPublicSettings(false);
       } catch (appError) {
-        console.error('App state check failed:', appError);
+        // Do not expose provider error objects or stack traces in the browser.
         
         // Handle app-level errors
         if (appError.status === 403 && appError.data?.extra_data?.reason) {
@@ -54,23 +64,23 @@ export const AuthProvider = ({ children }) => {
           } else {
             setAuthError({
               type: reason,
-              message: appError.message
+              message: safeAuthMessage(appError, 'Authentication is not available right now.')
             });
           }
         } else {
           setAuthError({
             type: 'unknown',
-            message: appError.message || 'Failed to load app'
+            message: safeAuthMessage(appError, 'Failed to load StudyOS right now.')
           });
         }
         setIsLoadingPublicSettings(false);
         setIsLoadingAuth(false);
       }
     } catch (error) {
-      console.error('Unexpected error:', error);
+      // Keep unexpected provider details out of client logs.
       setAuthError({
         type: 'unknown',
-        message: error.message || 'An unexpected error occurred'
+        message: safeAuthMessage(error, 'An unexpected error occurred.')
       });
       setIsLoadingPublicSettings(false);
       setIsLoadingAuth(false);
@@ -87,7 +97,7 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(false);
       setAuthChecked(true);
     } catch (error) {
-      console.error('User auth check failed:', error);
+      // Authentication failures are handled through status codes only.
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
       setAuthChecked(true);
