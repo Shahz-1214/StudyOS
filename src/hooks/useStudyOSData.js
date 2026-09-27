@@ -103,7 +103,8 @@ export function useStudyOSData() {
       setProfile(activeProfile);
       setSubjects(activeSubjects);
       setConcepts((cons || []).filter((c) => !c.archived && activeSubjectIds.has(c.subject_id)));
-      setEvents(evs || []);
+      const internalEvents = new Set(["ai_quota_reserved", "ai_quota_refunded", "ai_quota_cancelled", "promo_code_attempt"]);
+      setEvents((evs || []).filter((event) => !internalEvents.has(event.event_name)));
       setExams(learnerExams || []);
     } catch {
       setError(new Error("Could not load StudyOS data."));
