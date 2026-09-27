@@ -49,6 +49,14 @@ export default async function(req) {
         await refundAIQuota(base44, reservation);
         return Response.json({ error: checked.error, code: 'INVALID_AI_OUTPUT' }, { status: 422 });
       }
+
+      const allowedConcepts = new Set(concepts.map((c) => c.name.toLowerCase().trim()));
+      const conceptSafe = checked.questions.every((q) => allowedConcepts.has(q.concept_name.toLowerCase().trim()));
+      if (!conceptSafe) {
+        await refundAIQuota(base44, reservation);
+        return Response.json({ error: 'AI returned a question for an unknown concept. Please try again.', code: 'AI_CONCEPT_MISMATCH' }, { status: 422 });
+      }
+
       await commitAIQuota(base44, reservation);
       return Response.json({ questions: checked.questions, source: "ai" });
     } catch {
