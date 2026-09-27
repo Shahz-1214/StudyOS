@@ -47,6 +47,32 @@
     "completed_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "completion_id": {
+      "type": "string",
+      "default": ""
+    },
+    "mastery_applied": {
+      "type": "boolean",
+      "default": false
+    },
+    "mastery_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "concept_id": {
+            "type": "string"
+          },
+          "prevMastery": {
+            "type": "number"
+          },
+          "newMastery": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
     }
   },
   "required": [
