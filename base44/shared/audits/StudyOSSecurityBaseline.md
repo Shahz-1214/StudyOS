@@ -27,7 +27,7 @@ This document maps the five pre-launch security checks from the supplied AI App 
 - Debug logging in the audited frontend error/auth paths was removed.
 - Backend AI and entitlement errors use generic user-facing messages.
 - Login has a browser-side additional attempt guard; Base44 remains the server-side auth authority.
-- Turnstile is implemented as a server-verified control for login, signup, password reset, OTP and upload-related flows where the platform permits interception.
+- Turnstile is implemented as a server-verified control for login, signup, password reset, OTP and upload-related flows where the platform permits interception. While the Turnstile secrets are absent, the setup mode intentionally bypasses the check so development remains usable; before production, configure both secrets and confirm the protected flows no longer bypass the verification gate.
 - Security headers, CORS policy, and database transport/security are Base44 hosting/platform controls rather than Express/Helmet settings in this app. Verify them in the deployed Base44 environment rather than adding incompatible middleware.
 
 ## 4. Complex logic
