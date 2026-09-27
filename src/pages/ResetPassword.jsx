@@ -43,7 +43,7 @@ export default function ResetPassword() {
       await base44.auth.resetPassword({ resetToken, newPassword });
       window.location.href = "/login";
     } catch (err) {
-      setError(err.message || "Failed to reset password");
+      setError(err?.status === 429 ? "Too many requests. Please wait and try again." : err?.status === 400 || err?.status === 422 ? "This reset link is invalid or expired. Request a new link." : "We couldn't reset the password. Please try again.");
       setTsReset((r) => r + 1);
     } finally {
       setLoading(false);
