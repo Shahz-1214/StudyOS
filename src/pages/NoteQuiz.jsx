@@ -43,17 +43,32 @@ export default function NoteQuiz() {
       });
       const aiQuestions = res.data.questions;
 
-      // Map AI concept_name to existing user concepts (case-insensitive).
-      const byName = {};
-      concepts.forEach((c) => { byName[c.name.toLowerCase()] = c.id; });
-      const questions = aiQuestions.map((q) => ({
-        concept_id: q.concept_name ? (byName[q.concept_name.toLowerCase()] || "") : "",
-        prompt: q.prompt,
-        options: q.options,
-        correct_index: q.correct_index,
-        difficulty: q.difficulty,
-        explanation: q.explanation,
-      }));
+      // Map AI concepts only to the selected subject. When no subject is
+      // selected, only an unambiguous concept name may be linked. This prevents
+      // same-name concepts from another subject receiving mastery credit.
+      const normalizedTargetConcepts = subjectId
+        ? concepts.filter((c) => c.subject_id === subjectId)
+        : concepts;
+      const byName = new Map();
+      normalizedTargetConcepts.forEach((c) => {
+        const key = String(c.name || "").trim().toLowerCase();
+        if (!key) return;
+        const list = byName.get(key) || [];
+        list.push(c.id);
+        byName.set(key, list);
+      });
+      const questions = aiQuestions.map((q) => {
+        const key = String(q.concept_name || "").trim().toLowerCase();
+        const matches = byName.get(key) || [];
+        return {
+          concept_id: matches.length === 1 ? matches[0] : "",
+          prompt: q.prompt,
+          options: q.options,
+          correct_index: q.correct_index,
+          difficulty: q.difficulty,
+          explanation: q.explanation,
+        };
+      });
       const conceptIds = [...new Set(questions.map((q) => q.concept_id).filter(Boolean))];
 
       const created = await base44.entities.Quiz.create({
