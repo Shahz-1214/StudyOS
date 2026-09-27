@@ -23,6 +23,7 @@ export default function Practice() {
   const [updates, setUpdates] = useState([]);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [startError, setStartError] = useState("");
 
   const weakConcepts = useMemo(
     () => [...concepts].sort((a, b) => (a.mastery || 0) - (b.mastery || 0)).slice(0, 5),
@@ -35,6 +36,7 @@ export default function Practice() {
 
   async function startQuiz(conceptsForQuiz, pool, title, subjectId) {
     setBusy(true);
+    setStartError("");
     try {
       const generated = generateQuiz(conceptsForQuiz, pool, title, Math.min(5, conceptsForQuiz.length));
       generated.subject_id = subjectId || "mixed";
@@ -44,7 +46,7 @@ export default function Practice() {
       setQuiz(created);
       setMode("quiz");
     } catch {
-      setError?.("Could not start that quiz. Please try again.");
+      setStartError("Could not start that quiz. Please try again.");
     }
     setBusy(false);
   }
@@ -83,6 +85,12 @@ export default function Practice() {
           <FileText className="w-4 h-4" /> Past Papers
         </Link>
       </div>
+
+      {startError && (
+        <StudyPanel className="p-4 mb-4 flex items-center gap-2 text-destructive text-sm">
+          <AlertTriangle className="w-4 h-4" /> {startError}
+        </StudyPanel>
+      )}
 
       {error && (
         <StudyPanel className="p-4 mb-4 flex items-center gap-2 text-destructive text-sm">
