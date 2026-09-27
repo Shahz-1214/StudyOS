@@ -43,8 +43,8 @@ export default function Practice() {
       track(EVENTS.QUIZ_STARTED, { quiz_id: created.id });
       setQuiz(created);
       setMode("quiz");
-    } catch (e) {
-      console.error(e);
+    } catch {
+      setError?.("Could not start that quiz. Please try again.");
     }
     setBusy(false);
   }
@@ -56,8 +56,7 @@ export default function Practice() {
       await reload();
       setAnswers(finalAnswers);
       setUpdates(masteryUpdates);
-    } catch (e) {
-      console.error(e);
+    } catch {
       setAnswers(finalAnswers);
       setUpdates([]);
       setSaveError(true);
