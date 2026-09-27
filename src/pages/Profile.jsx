@@ -66,7 +66,7 @@ export default function Profile() {
       }
       setNewSubject("");
       await reload();
-    } catch (e) { alert(e?.message || "Could not add subject"); }
+    } catch { alert("Could not add subject. Please try again."); }
     setSaving(false);
   };
 
@@ -78,7 +78,7 @@ export default function Profile() {
       if (subs.length) await base44.entities.Concept.deleteMany({ subject_id: subject.id });
       await base44.entities.Subject.delete(subject.id);
       await reload();
-    } catch (e) { alert(e?.message || "Could not delete subject"); }
+    } catch { alert("Could not delete subject. Please try again."); }
     setSaving(false);
   };
 
@@ -97,7 +97,7 @@ export default function Profile() {
       });
       setNewConcept((s) => ({ ...s, [subjectId]: "" }));
       await reload();
-    } catch (e) { alert(e?.message || "Could not add concept"); }
+    } catch { alert("Could not add concept. Please try again."); }
     setSaving(false);
   };
 
@@ -106,7 +106,7 @@ export default function Profile() {
     try {
       await base44.entities.Concept.delete(concept.id);
       await reload();
-    } catch (e) { alert(e?.message || "Could not delete concept"); }
+    } catch { alert("Could not delete concept. Please try again."); }
     setSaving(false);
   };
 
@@ -115,7 +115,7 @@ export default function Profile() {
     try {
       await base44.entities.LearnerProfile.update(profile.id, patch);
       await reload();
-    } catch (e) { alert(e?.message || "Could not update profile"); }
+    } catch { alert("Could not update profile. Please try again."); }
     setSaving(false);
   };
 
