@@ -81,8 +81,7 @@ export default function NoteQuiz() {
       await reload();
       setAnswers(finalAnswers);
       setUpdates(ups);
-    } catch (e) {
-      console.error(e);
+    } catch {
       setAnswers(finalAnswers);
       setUpdates([]);
       setSaveError(true);
