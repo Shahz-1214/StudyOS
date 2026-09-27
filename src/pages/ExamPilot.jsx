@@ -63,13 +63,25 @@ export default function ExamPilot() {
         concepts: target.map((c) => ({ name: c.name, mastery: c.mastery, importance: c.importance })),
         count: 8,
       });
-      const byName = {};
-      concepts.forEach((c) => { byName[c.name.toLowerCase()] = c.id; });
-      const questions = res.data.questions.map((q) => ({
-        concept_id: q.concept_name ? (byName[q.concept_name.toLowerCase()] || "") : "",
-        prompt: q.prompt, options: q.options, correct_index: q.correct_index,
-        difficulty: q.difficulty, explanation: q.explanation,
-      }));
+      // Adaptive-exam concepts must resolve only to the exact weak-concept
+      // target set used by the backend, never to a same-name concept in another subject.
+      const targetByName = new Map();
+      target.forEach((c) => {
+        const key = String(c.name || "").trim().toLowerCase();
+        if (!key) return;
+        const ids = targetByName.get(key) || [];
+        ids.push(c.id);
+        targetByName.set(key, ids);
+      });
+      const questions = res.data.questions.map((q) => {
+        const key = String(q.concept_name || "").trim().toLowerCase();
+        const ids = targetByName.get(key) || [];
+        return {
+          concept_id: ids.length === 1 ? ids[0] : "",
+          prompt: q.prompt, options: q.options, correct_index: q.correct_index,
+          difficulty: q.difficulty, explanation: q.explanation,
+        };
+      });
       const conceptIds = [...new Set(questions.map((q) => q.concept_id).filter(Boolean))];
       const created = await base44.entities.Quiz.create({
         subject_id: "mixed", title: "Adaptive Exam · Weak Concepts",
