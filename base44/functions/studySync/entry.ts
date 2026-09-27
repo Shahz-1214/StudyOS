@@ -88,7 +88,7 @@ export default async function(req) {
       tasks: created,
       sources: { weak_concepts: weakCount, exams: examCount, lectures: lectureCount },
     });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Could not refresh StudySync right now. Please try again.", code: "INTERNAL_ERROR" }, { status: 500 });
   }
 }
