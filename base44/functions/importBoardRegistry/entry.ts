@@ -78,7 +78,7 @@ export default async function(req) {
       url_checks: urlChecks,
       files_modified: ["base44/entities/Board.jsonc", "base44/entities/BoardResource.jsonc", "base44/entities/ExamSeries.jsonc", "base44/shared/boardRegistryTransform.js", "base44/functions/importBoardRegistry/entry.ts", "src/lib/resourceMeta.js", "src/components/resources/ResourceCard.jsx", "src/pages/Resources.jsx"],
     });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Could not import the board registry. Please try again.", code: "INTERNAL_ERROR" }, { status: 500 });
   }
 }
