@@ -90,7 +90,7 @@ export default function ExamPilot() {
       const { updates: ups } = await completeQuiz(quiz, finalAnswers, concepts);
       await reload();
       setAnswers(finalAnswers); setUpdates(ups);
-    } catch (e) { console.error(e); setAnswers(finalAnswers); setUpdates([]); setSaveError(true); }
+    } catch { setAnswers(finalAnswers); setUpdates([]); setSaveError(true); }
     setMode("results");
   }
 
