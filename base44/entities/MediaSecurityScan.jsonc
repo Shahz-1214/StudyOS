@@ -66,7 +66,7 @@
     "scanner_name": {
       "type": "string",
       "default": "",
-      "description": "Malware scanner that produced the verdict (self-hosted ClamAV bridge)."
+      "description": "Malware scanner that produced the verdict."
     },
     "scanner_id": {
       "type": "string",
@@ -76,7 +76,7 @@
     "scanner_version": {
       "type": "string",
       "default": "",
-      "description": "Scanner engine/definitions version reported by the bridge."
+      "description": "Scanner engine/definitions version reported by the malware scanning provider."
     },
     "detected_signature": {
       "type": "string",
