@@ -66,7 +66,7 @@ export default async function(req) {
       expires_at: sub?.expires_at || null,
       trial_ends_at: sub?.trial_ends_at || null,
     });
-  } catch (error) {
-    return Response.json({ error: error?.message || "Could not load subscription state." }, { status: 500 });
+  } catch {
+    return Response.json({ error: "Could not load subscription state. Please try again.", code: "INTERNAL_ERROR" }, { status: 500 });
   }
 }
