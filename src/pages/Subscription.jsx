@@ -128,7 +128,6 @@ export default function Subscription() {
       setCodeError(
         error?.response?.data?.error ||
         error?.data?.error ||
-        error?.message ||
         "That access code could not be redeemed."
       );
     } finally {
