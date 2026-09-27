@@ -128,8 +128,8 @@ export default function OAuthConsent() {
         setDecided(action);
         setSubmitting(false);
       }
-    } catch (e) {
-      setError(e.message);
+    } catch {
+      setError("Could not complete authorization. Please try again.");
       setSubmitting(false);
     }
   };
