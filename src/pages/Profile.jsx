@@ -11,7 +11,7 @@ import ThemePicker from "@/components/ThemePicker";
 import { Switch } from "@/components/ui/switch";
 import { NOTIFICATION_PREF_DEFS, getNotificationPrefs, setNotificationPrefs } from "@/lib/appSettings";
 import PageSkeleton from "@/components/PageSkeleton";
-import { Plus, Trash2, X, BookOpen, Palette, Layers, Settings, Bell, CreditCard, LogOut } from "lucide-react";
+import { Plus, Trash2, X, BookOpen, Palette, Layers, Settings, Bell, CreditCard, LogOut, Download, Loader2 } from "lucide-react";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -21,8 +21,27 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [notifPrefs, setNotifPrefs] = useState(getNotificationPrefs);
   const [savingGalaxy, setSavingGalaxy] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => { setNotificationPrefs(notifPrefs); }, [notifPrefs]);
+
+  const exportData = async () => {
+    setExporting(true);
+    try {
+      const res = await base44.functions.invoke("exportMyData", {});
+      const blob = new Blob([JSON.stringify(res?.data || {}, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "studyos-data-export.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Could not export your StudyOS data. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const toggleGalaxy = async (next) => {
     if (!profile?.id) return;
@@ -232,6 +251,14 @@ export default function Profile() {
           <Link to="/subscription" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] hover:border-primary">
             <CreditCard className="w-4 h-4" /> Subscription
           </Link>
+          <button
+            onClick={exportData}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] hover:border-primary disabled:opacity-50"
+          >
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {exporting ? "Preparing export…" : "Export my data"}
+          </button>
           <button
             onClick={() => base44.auth.logout("/")}
             className="inline-flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive text-[13px] font-semibold px-3 py-2 hover:bg-destructive/20"
