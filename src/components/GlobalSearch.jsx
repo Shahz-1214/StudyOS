@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Search, X, Brain, FileText, ExternalLink } from "lucide-react";
+import { Search, X, Brain, FileText, ExternalLink, BookOpen } from "lucide-react";
 
 const NOTE_TYPES = new Set(["notes", "guide", "official_textbook"]);
 
@@ -80,24 +80,45 @@ export default function GlobalSearch({ concepts, subjects, boardId }) {
           )}
           {results.notes.length > 0 && (
             <div>
-              <div className="eyebrow px-2 py-1.5">Notes</div>
-              {results.notes.map((n) => (
-                <a
-                  key={n.id}
-                  href={n.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setOpen(false)}
-                  className="w-full flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-secondary/60"
-                >
-                  <FileText className="w-4 h-4 text-primary shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] text-foreground truncate">{n.title}</div>
-                    <div className="text-[10px] text-muted-foreground">{n.provider || "Board resource"}</div>
-                  </div>
-                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                </a>
-              ))}
+              <div className="eyebrow px-2 py-1.5">Books &amp; notes</div>
+              {results.notes.map((n) => {
+                const isBook = n.resource_type === "official_textbook";
+                const label = isBook ? "Official textbook" : (n.provider || "Board resource");
+                // A stored textbook opens in the in-app reader; anything else
+                // still opens its official source.
+                if (isBook && n.stored_file_uri) {
+                  return (
+                    <button
+                      key={n.id}
+                      onMouseDown={() => { navigate(`/book/${n.id}`); setOpen(false); }}
+                      className="w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-secondary/60"
+                    >
+                      <BookOpen className="w-4 h-4 text-primary shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[13px] text-foreground truncate">{n.title}</div>
+                        <div className="text-[10px] text-muted-foreground">{label}</div>
+                      </div>
+                    </button>
+                  );
+                }
+                return (
+                  <a
+                    key={n.id}
+                    href={n.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setOpen(false)}
+                    className="w-full flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-secondary/60"
+                  >
+                    <FileText className="w-4 h-4 text-primary shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] text-foreground truncate">{n.title}</div>
+                      <div className="text-[10px] text-muted-foreground">{label}</div>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  </a>
+                );
+              })}
             </div>
           )}
         </div>

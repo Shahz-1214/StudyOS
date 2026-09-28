@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
@@ -10,7 +10,7 @@ import QuizRunner from "@/components/practice/QuizRunner";
 import QuizResults from "@/components/practice/QuizResults";
 import VerifiedNotes from "@/components/resources/VerifiedNotes";
 import PageSkeleton from "@/components/PageSkeleton";
-import { Loader2, FileText, Sparkles, AlertTriangle } from "lucide-react";
+import { Loader2, FileText, Sparkles, AlertTriangle, BookOpen } from "lucide-react";
 
 export default function NoteQuiz() {
   const { user } = useAuth();
@@ -26,6 +26,34 @@ export default function NoteQuiz() {
   const [answers, setAnswers] = useState(null);
   const [updates, setUpdates] = useState([]);
   const [saveError, setSaveError] = useState(false);
+  const [grounding, setGrounding] = useState(null);
+
+  // Optional textbook grounding: ?chapter=<id> seeds this quiz from that
+  // chapter's own indexed text instead of the learner pasting notes. The
+  // generator itself is unchanged and stays behind the existing AI quota guard.
+  const chapterId = new URLSearchParams(window.location.search).get("chapter") || "";
+  useEffect(() => {
+    if (!chapterId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const ch = await base44.entities.TextbookChapter.get(chapterId);
+        if (cancelled || !ch) return;
+        let book = null;
+        try {
+          book = await base44.entities.BoardResource.get(ch.book_resource_id);
+        } catch {
+          book = null;
+        }
+        if (cancelled) return;
+        setGrounding({ chapter: ch, book });
+        if (ch.source_digest) setNotes((prev) => prev || ch.source_digest);
+      } catch {
+        if (!cancelled) setGrounding(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [chapterId]);
 
   if (loading) return <PageSkeleton />;
   if (!user) return <Navigate to="/" replace />;
@@ -35,7 +63,10 @@ export default function NoteQuiz() {
     if (!notes.trim()) return;
     setBusy(true); setError(null);
     try {
-      const subjectName = subjects.find((s) => s.id === subjectId)?.name || "";
+      const subjectName =
+        subjects.find((s) => s.id === subjectId)?.name ||
+        grounding?.book?.subject_name ||
+        "";
       const res = await base44.functions.invoke("generateQuizFromNotes", {
         notes: notes.trim(),
         count: 5,
@@ -71,12 +102,21 @@ export default function NoteQuiz() {
       });
       const conceptIds = [...new Set(questions.map((q) => q.concept_id).filter(Boolean))];
 
+      // Grounding metadata keeps a chapter-derived quiz traceable to the exact
+      // book and chapter it came from.
+      const grounded = !!grounding?.chapter?.source_digest;
       const created = await base44.entities.Quiz.create({
         subject_id: subjectId || "mixed",
-        title: subjectName ? `${subjectName} · Note → Quiz` : "Note → Quiz",
+        title: grounded
+          ? `${grounding.book?.title || subjectName || "Textbook"} · Chapter ${grounding.chapter.chapter_index}`
+          : (subjectName ? `${subjectName} · Note → Quiz` : "Note → Quiz"),
         concept_ids: conceptIds,
         questions,
         source: "ai",
+        source_resource_id: grounded ? grounding.chapter.book_resource_id : "",
+        source_chapter_id: grounded ? grounding.chapter.id : "",
+        source_book_title: grounded ? (grounding.book?.title || "") : "",
+        source_chapter_title: grounded ? grounding.chapter.chapter_title : "",
       });
       track(EVENTS.QUIZ_GENERATED, { source: "ai", count: questions.length });
       track(EVENTS.QUIZ_STARTED, { quiz_id: created.id, source: "ai" });
@@ -117,6 +157,28 @@ export default function NoteQuiz() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Turn your notes into AI-generated practice questions, then let StudyOS learn what you keep missing.</p>
       </div>
+
+      {mode === "input" && grounding && (
+        <StudyPanel className="p-4 mb-4">
+          {grounding.chapter.source_digest ? (
+            <div className="flex items-start gap-2 text-[12px] text-muted-foreground">
+              <BookOpen className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <span>
+                Grounded in <span className="text-foreground font-semibold">{grounding.book?.title || "this textbook"}</span>
+                {" · Chapter "}{grounding.chapter.chapter_index}: {grounding.chapter.chapter_title}
+                {" · p. "}{grounding.chapter.start_page}
+                {grounding.chapter.end_page !== grounding.chapter.start_page ? "–" + grounding.chapter.end_page : ""}
+                . Questions are generated from this chapter's own indexed text, not invented.
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 text-[12px] text-muted-foreground">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>This chapter has no indexed text yet, so StudyOS cannot create textbook-grounded questions from it.</span>
+            </div>
+          )}
+        </StudyPanel>
+      )}
 
       {mode === "input" && (
         <VerifiedNotes boardId={profile?.board_id} />

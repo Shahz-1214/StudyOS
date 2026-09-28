@@ -4,6 +4,7 @@ import { useStudyOSData } from "@/hooks/useStudyOSData";
 import StudyPanel from "@/components/StudyPanel";
 import MasteryBar from "@/components/MasteryBar";
 import VerifiedNotes from "@/components/resources/VerifiedNotes";
+import BookLibrary from "@/components/resources/BookLibrary";
 import { computeConceptStatus, STATUS_LABELS, statusColor, computeSubjectMastery } from "@/lib/learnerState";
 import PageSkeleton from "@/components/PageSkeleton";
 import { Layers, FileText, CalendarClock, Brain, BookOpen } from "lucide-react";
@@ -27,6 +28,7 @@ export default function SubjectHub() {
       </div>
 
       {profile?.board_id && <VerifiedNotes boardId={profile.board_id} />}
+      {profile?.board_id && <BookLibrary boardId={profile.board_id} />}
 
       {subjects.length === 0 ? (
         <StudyPanel className="p-8 text-center">

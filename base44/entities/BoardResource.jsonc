@@ -1,6 +1,7 @@
 {
   "name": "BoardResource",
   "type": "object",
+  "description": "Canonical board resource record (per the existing StudyOS resource framework). Also the canonical TEXTBOOK record for operator-supplied board books: the textbook-specific fields below are additive and stay empty for non-textbook resources, so papers/notes/guides are unaffected. `url` continues to hold the official board source link; `stored_file_uri` holds StudyOS's own stored copy when one exists.",
   "properties": {
     "resource_id": {
       "type": "string",
@@ -83,7 +84,8 @@
       "type": "string"
     },
     "url": {
-      "type": "string"
+      "type": "string",
+      "description": "Official board / authority source link. Always retained as provenance, whether or not StudyOS also stores a copy."
     },
     "provider": {
       "type": "string",
@@ -135,6 +137,110 @@
     "notes": {
       "type": "string",
       "default": ""
+    },
+    "edition": {
+      "type": "string",
+      "default": "",
+      "description": "Verified edition/version label when known. Empty when not established."
+    },
+    "stored_file_uri": {
+      "type": "string",
+      "default": "",
+      "description": "Private-storage URI of the StudyOS-stored textbook copy. Empty when StudyOS stores nothing for this resource."
+    },
+    "stored_file_name": {
+      "type": "string",
+      "default": ""
+    },
+    "file_size_bytes": {
+      "type": "number",
+      "default": 0
+    },
+    "sha256": {
+      "type": "string",
+      "default": "",
+      "description": "SHA-256 of the stored file. Primary exact-file identity; used for idempotent registration."
+    },
+    "page_count": {
+      "type": "number",
+      "default": 0
+    },
+    "stored_copy_status": {
+      "type": "string",
+      "enum": [
+        "not_stored",
+        "stored",
+        "replaced"
+      ],
+      "default": "not_stored"
+    },
+    "processing_status": {
+      "type": "string",
+      "enum": [
+        "registered",
+        "validating",
+        "validated",
+        "indexing",
+        "ready",
+        "not_indexed",
+        "needs_review",
+        "failed"
+      ],
+      "default": "registered"
+    },
+    "index_status": {
+      "type": "string",
+      "enum": [
+        "not_indexed",
+        "indexing",
+        "indexed",
+        "needs_review",
+        "failed"
+      ],
+      "default": "not_indexed"
+    },
+    "chapter_index_source": {
+      "type": "string",
+      "enum": [
+        "not_set",
+        "pdf_outline",
+        "toc",
+        "operator_map"
+      ],
+      "default": "not_set",
+      "description": "How chapter boundaries were established. Never inferred or guessed."
+    },
+    "structural_validation": {
+      "type": "string",
+      "enum": [
+        "not_run",
+        "structurally_validated",
+        "failed"
+      ],
+      "default": "not_run",
+      "description": "Result of deterministic byte-level PDF validation (magic bytes, EOF, encryption, active content)."
+    },
+    "malware_scan_status": {
+      "type": "string",
+      "enum": [
+        "not_scanned",
+        "scanned_clean",
+        "scanned_infected",
+        "unavailable"
+      ],
+      "default": "not_scanned",
+      "description": "Truthful malware-scan state. Textbook files exceed the existing scanner's 3.5 MB ceiling, so these are recorded as not_scanned rather than implying a scan that did not happen."
+    },
+    "rights_status": {
+      "type": "string",
+      "enum": [
+        "pending_verification",
+        "verified",
+        "restricted",
+        "rejected"
+      ],
+      "default": "pending_verification",
+      "description": "Redistribution/permission state. Never fabricated; pending_verification until actually established."
     }
   },
   "required": [

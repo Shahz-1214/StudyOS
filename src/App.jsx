@@ -34,6 +34,8 @@ import EssayCheck from '@/pages/EssayCheck';
 import Tasks from '@/pages/Tasks';
 import StudySync from '@/pages/StudySync';
 import PastPapers from '@/pages/PastPapers';
+import BookReader from '@/pages/BookReader';
+import AdminTextbooks from '@/pages/AdminTextbooks';
 import ExamDates from '@/pages/ExamDates';
 import SubjectHub from '@/pages/SubjectHub';
 import ExamVault from '@/pages/ExamVault';
@@ -48,7 +50,7 @@ const AuthenticatedApp = () => {
   const location = useLocation();
   const publicRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/privacy", "/terms", "/cookies", "/error/401", "/error/403"];
   const isPublicRoute = publicRoutes.includes(location.pathname);
-  const protectedPrefixes = ["/tool/", "/practice", "/past-papers", "/exam-dates", "/subject-hub", "/exam-vault", "/help", "/subscription", "/onboarding", "/progress", "/profile"];
+  const protectedPrefixes = ["/tool/", "/practice", "/past-papers", "/exam-dates", "/subject-hub", "/exam-vault", "/book/", "/admin/", "/help", "/subscription", "/onboarding", "/progress", "/profile"];
   const isProtectedRoute = location.pathname === "/" || protectedPrefixes.some((prefix) => location.pathname.startsWith(prefix));
 
   // Show a branded security/loading state while the auth bootstrap is running.
@@ -87,6 +89,8 @@ const AuthenticatedApp = () => {
         <Route path="/past-papers" element={<PastPapers />} />
         <Route path="/exam-dates" element={<ExamDates />} />
         <Route path="/subject-hub" element={<SubjectHub />} />
+        <Route path="/book/:id" element={<BookReader />} />
+        <Route path="/admin/textbooks" element={<AdminTextbooks />} />
         <Route path="/exam-vault" element={<ExamVault />} />
         <Route path="/help" element={<HelpCenter />} />
         <Route path="/tool/studylens" element={<StudyLens />} />
