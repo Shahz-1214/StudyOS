@@ -9,6 +9,11 @@
     "board_id": {
       "type": "string"
     },
+    "sub_board_id": {
+      "type": "string",
+      "default": "",
+      "description": "Canonical sub-board this resource belongs to (e.g. bise-punjab under pk-ssc). Empty when the resource applies to the whole qualification."
+    },
     "country": {
       "type": "string",
       "default": ""
@@ -40,6 +45,16 @@
     "subject_name": {
       "type": "string",
       "default": ""
+    },
+    "medium": {
+      "type": "string",
+      "enum": [
+        "english",
+        "urdu",
+        "unspecified"
+      ],
+      "default": "unspecified",
+      "description": "Language edition. English Medium and Urdu Medium textbooks are separate variants with separate files, never duplicates."
     },
     "syllabus_year": {
       "type": "string",

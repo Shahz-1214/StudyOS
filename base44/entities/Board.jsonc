@@ -40,6 +40,49 @@
       "type": "boolean",
       "default": false
     },
+    "sub_boards": {
+      "type": "array",
+      "default": [],
+      "description": "Canonical sub-board registry for qualification-level boards such as Matric (SSC). Many provincial boards (BISE Punjab, BISE Lahore, FBISE) live under one qualification parent. Additive: resources and learners reference a sub_board_id while the parent board_id remains unchanged.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sub_board_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parent_board_id": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string",
+            "default": ""
+          },
+          "country": {
+            "type": "string",
+            "default": ""
+          },
+          "curriculum_authority": {
+            "type": "string",
+            "default": ""
+          },
+          "curriculum_url": {
+            "type": "string",
+            "default": ""
+          },
+          "verified_on": {
+            "type": "string",
+            "format": "date"
+          },
+          "active": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    },
     "official_sources": {
       "type": "array",
       "items": {

@@ -13,7 +13,9 @@ export default function VerifiedNotes({ boardId }) {
   useEffect(() => {
     if (!boardId) { setNotes([]); return; }
     setBusy(true);
-    base44.entities.BoardResource.filter({ board_id: boardId, resource_type: "notes", active: true })
+    // Verified board material consumed by this workflow: notes/guides and the
+    // canonical official textbook records (one shared source, never copied).
+    base44.entities.BoardResource.filter({ board_id: boardId, resource_type: { $in: ["notes", "guide", "official_textbook"] }, active: true })
       .then((r) => setNotes(r))
       .catch(() => setNotes([]))
       .finally(() => setBusy(false));
@@ -35,7 +37,7 @@ export default function VerifiedNotes({ boardId }) {
     <StudyPanel className="p-5 mb-4">
       <div className="flex items-center gap-2 mb-1">
         <FileText className="w-4 h-4 text-primary" />
-        <h3 className="font-bold text-foreground text-[14px]">Verified notes for your board</h3>
+        <h3 className="font-bold text-foreground text-[14px]">Verified notes &amp; textbooks for your board</h3>
       </div>
       <p className="text-[12px] text-muted-foreground mb-3">Open these for reference, then paste your notes below to generate a quiz.</p>
       <div className="space-y-2">
