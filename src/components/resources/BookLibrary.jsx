@@ -51,7 +51,10 @@ export default function BookLibrary({ boardId, title = "Your board's textbooks" 
       .finally(() => setLoading(false));
   }, [boardId, filters]);
 
-  if (!boardId) return null;
+  // Learners only ever see their own board's library. An admin keeps the panel
+  // (and its Textbook import entry) even with no board set, so the operator tool
+  // is never hidden by learner profile state.
+  if (!boardId && user?.role !== "admin") return null;
 
   const grouped = rows.reduce((acc, b) => {
     const k = b.subject_name || "Other";
@@ -77,13 +80,15 @@ export default function BookLibrary({ boardId, title = "Your board's textbooks" 
         Official textbooks registered for your board. Only what is actually registered is listed.
       </p>
 
-      <BookFilters options={options} value={filters} onChange={setFilters} />
+      {boardId && <BookFilters options={options} value={filters} onChange={setFilters} />}
 
       {loading ? (
         <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
       ) : rows.length === 0 ? (
         <div className="rounded-xl border border-border bg-elevated p-4 text-[12px] text-muted-foreground">
-          No verified textbook is currently registered for this board with these filters.
+          {boardId
+            ? "No verified textbook is currently registered for this board with these filters."
+            : "No board is set on your profile, so there is no board library to show. Textbook copies can still be registered and stored in Textbook import."}
         </div>
       ) : (
         <div className="space-y-4">

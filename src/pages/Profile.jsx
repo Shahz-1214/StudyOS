@@ -203,6 +203,11 @@ export default function Profile() {
           <Link to="/help" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] hover:border-primary">
             <BookOpen className="w-4 h-4" /> Help Center
           </Link>
+          {user?.role === "admin" && (
+            <Link to="/onboarding" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-[13px] hover:border-primary">
+              <Settings className="w-4 h-4" /> Re-run onboarding
+            </Link>
+          )}
         </div>
       </StudyPanel>
 

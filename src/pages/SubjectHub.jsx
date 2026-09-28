@@ -28,7 +28,9 @@ export default function SubjectHub() {
       </div>
 
       {profile?.board_id && <VerifiedNotes boardId={profile.board_id} />}
-      {profile?.board_id && <BookLibrary boardId={profile.board_id} />}
+      {/* Always mounted: it hides itself for a learner with no board, and an
+          admin keeps the Textbook import entry regardless of profile state. */}
+      <BookLibrary boardId={profile?.board_id || ""} />
 
       {subjects.length === 0 ? (
         <StudyPanel className="p-8 text-center">

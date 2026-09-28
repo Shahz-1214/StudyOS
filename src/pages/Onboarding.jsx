@@ -35,6 +35,22 @@ export default function Onboarding() {
   const [goal, setGoal] = useState(GOAL_PRESETS[0]);
   const [studyTime, setStudyTime] = useState(60);
 
+  // Re-entering onboarding (admins) must never reset what is already saved:
+  // once the shared data has settled, seed the steps from the existing profile
+  // and its subjects. A brand-new learner has no profile and keeps the defaults.
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    if (prefilled || loading || !profile) return;
+    setCountry(profile.country || "");
+    setBoardId(profile.board_id || "");
+    if (profile.education_level) setEducation(profile.education_level);
+    if (profile.main_goal) setGoal(profile.main_goal);
+    if (profile.daily_study_minutes) setStudyTime(profile.daily_study_minutes);
+    const owned = (subjects || []).filter((s) => !s.archived).map((s) => s.name);
+    if (owned.length) setSelectedSubjects(owned);
+    setPrefilled(true);
+  }, [profile, subjects, loading, prefilled]);
+
   useEffect(() => {
     if (!user) return;
     base44.entities.Board.list("-board", 200)
@@ -61,7 +77,10 @@ export default function Onboarding() {
 
   if (loading || !boardsLoaded) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   if (!user) return <Navigate to="/" replace />;
-  if (profile && profile.onboarding_completed) return <Navigate to="/" replace />;
+  // Learners run onboarding once. An admin may re-enter it at any time, because
+  // country and board are only ever set here — without this they are frozen
+  // after the first run, with no way to correct a wrong or missing board.
+  if (profile && profile.onboarding_completed && user?.role !== "admin") return <Navigate to="/" replace />;
 
   const toggleSubject = (name) => {
     setSelectedSubjects((prev) =>
