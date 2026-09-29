@@ -243,7 +243,7 @@ export default async function(req) {
     }
 
     // Stage 5: sanitization — build the safe derivative before approval.
-    const san = sanitizeMedia(detected, bytes);
+    const san: any = sanitizeMedia(detected, bytes);
     if (!san.ok) {
       await base44.asServiceRole.entities.MediaSecurityScan.update(recordId, {
         status: 'sanitization_failed',
@@ -256,7 +256,7 @@ export default async function(req) {
 
     let sanitizedUri = '';
     if (!san.passthrough) {
-      const derivative = new File([san.bytes], 'sanitized.' + san.ext, { type: san.mime });
+      const derivative = new File([san.bytes as any], 'sanitized.' + san.ext, { type: san.mime });
       const uploadRes = await base44.asServiceRole.integrations.Core.UploadPrivateFile({ file: derivative });
       sanitizedUri = String(uploadRes?.file_uri || '');
       if (!sanitizedUri) {
