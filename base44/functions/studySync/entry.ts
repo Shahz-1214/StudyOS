@@ -15,7 +15,7 @@ export default async function(req) {
       base44.entities.Event.list("-occurred_at", 30),
       base44.entities.Task.list("-created_date", 100),
       base44.entities.Concept.list("-updated_date", 200),
-    ]);
+    ]) as any[];
 
     const concept = (id) => concepts.find((c) => c.id === id);
     const openKeys = new Set(
