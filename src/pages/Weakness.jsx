@@ -2,15 +2,18 @@ import { useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
+import { useEntitlement } from "@/hooks/useEntitlement";
 import { base44 } from "@/api/base44Client";
 import { track, EVENTS } from "@/lib/analytics";
 import StudyPanel from "@/components/StudyPanel";
 import PageSkeleton from "@/components/PageSkeleton";
+import ProCreditBadge from "@/components/ProCreditBadge";
 import { Loader2, AlertCircle, Sparkles, AlertTriangle, ArrowRight, TrendingDown, Target } from "lucide-react";
 
 export default function Weakness() {
   const { user } = useAuth();
   const { profile, concepts, subjects, loading } = useStudyOSData();
+  const { isDemoModeActive } = useEntitlement();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [report, setReport] = useState(null);
@@ -42,7 +45,7 @@ export default function Weakness() {
         <div className="eyebrow">Plan · Stage 4</div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mt-1 flex items-center gap-2">
           <AlertCircle className="w-6 h-6 text-primary" /> Weakness AI
-          <span className="text-[9px] font-bold uppercase tracking-wide rounded-full border border-primary/30 text-primary px-2 py-1">Pro · 1 credit</span>
+          <ProCreditBadge isDemoMode={isDemoModeActive} />
         </h1>
         <p className="text-sm text-muted-foreground mt-1">An AI diagnostic over your mastery data — surfaces hidden weaknesses, priority order, and targeted recommendations.</p>
       </div>

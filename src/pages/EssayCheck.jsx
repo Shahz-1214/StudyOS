@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
+import { useEntitlement } from "@/hooks/useEntitlement";
 import { base44 } from "@/api/base44Client";
 import { track, EVENTS } from "@/lib/analytics";
 import StudyPanel from "@/components/StudyPanel";
 import PageSkeleton from "@/components/PageSkeleton";
+import ProCreditBadge from "@/components/ProCreditBadge";
 import { Loader2, PenLine, Sparkles, AlertTriangle, FileText, CheckCircle2, ArrowUpRight, RotateCcw } from "lucide-react";
 
 const DIMENSIONS = [
@@ -18,6 +20,7 @@ const DIMENSIONS = [
 export default function EssayCheck() {
   const { user } = useAuth();
   const { profile, loading } = useStudyOSData();
+  const { isDemoModeActive } = useEntitlement();
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,7 +64,7 @@ export default function EssayCheck() {
         <div className="eyebrow">Study · Stage 5</div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mt-1 flex items-center gap-2">
           <PenLine className="w-6 h-6 text-primary" /> EssayCheck
-          <span className="text-[9px] font-bold uppercase tracking-wide rounded-full border border-primary/30 text-primary px-2 py-1">Pro · 1 credit</span>
+          <ProCreditBadge isDemoMode={isDemoModeActive} />
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Grammar, structure, argument, and readability analysis with targeted feedback. Your voice stays yours — no auto-rewrite.</p>
       </div>

@@ -274,7 +274,7 @@ export default function Subscription() {
       <StudyPanel className="p-5 mt-5">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
-            <div className="eyebrow">Pro features · 1 credit per action</div>
+            <div className="eyebrow">{isDemoModeActive ? "Pro features" : "Pro features · 1 credit per action"}</div>
             <h2 className="text-lg font-bold text-foreground mt-1">Premium processing without a hard paywall</h2>
           </div>
           <LockKeyhole className="w-5 h-5 text-primary shrink-0" />
@@ -293,7 +293,9 @@ export default function Subscription() {
                 </div>
                 <div className="font-semibold text-[13px] text-foreground mt-3">{feature.name}</div>
                 <div className="text-[11px] text-muted-foreground mt-1 leading-4">{feature.desc}</div>
-                <div className="text-[10px] text-muted-foreground mt-3">Uses 1 Pro credit</div>
+                {!isDemoModeActive && (
+                  <div className="text-[10px] text-muted-foreground mt-3">Uses 1 Pro credit</div>
+                )}
               </div>
             );
           })}
