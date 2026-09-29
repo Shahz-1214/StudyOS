@@ -1,9 +1,9 @@
-import { useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { STUDY_FEATURES, PLAN_FEATURES } from "@/lib/features";
 import AppFooter from "@/components/AppFooter";
 import PageErrorBoundary from "@/components/errors/PageErrorBoundary";
+import SidebarSearch from "@/components/SidebarSearch";
 import { Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine, CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain, AlertCircle, CreditCard, Settings, Layers, Archive, Search } from "lucide-react";
 
 const ICONS = { Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine, CalendarClock, CheckSquare, RefreshCw, Timer, Brain, AlertCircle, CreditCard, Settings, Layers, Archive };
@@ -21,20 +21,9 @@ export default function Layout() {
   const navigate = useNavigate();
   const initials = (user?.full_name || user?.email || "S").trim().charAt(0).toUpperCase();
 
-  // One way in: hand off to the working search on the Home screen, which reads
-  // this navigation state and focuses its own input.
-  const openSearch = () => navigate("/", { state: { focusSearch: Date.now() } });
-
-  useEffect(() => {
-    const onKey = (e) => {
-      if ((e.metaKey || e.ctrlKey) && String(e.key).toLowerCase() === "k") {
-        e.preventDefault();
-        navigate("/", { state: { focusSearch: Date.now() } });
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [navigate]);
+  // The sidebar owns search on desktop (⌘K included). This is the mobile entry
+  // point: the header button hands off to the Home bar, which focuses itself.
+  const openHomeSearch = () => navigate("/", { state: { focusSearch: Date.now() } });
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -46,18 +35,9 @@ export default function Layout() {
             </div>
             <div className="min-w-0">
               <div className="brand-wordmark text-[20px] font-semibold text-white">StudyOS</div>
-              <div className="text-[9px] uppercase tracking-[.22em] text-muted-foreground">your academic command center</div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={openSearch}
-            aria-label="Search StudyOS"
-            className="mt-4 flex w-full items-center gap-2 rounded-xl border border-border bg-elevated px-3 py-2 text-[11px] text-muted-foreground transition-colors duration-150 hover:border-primary/40 hover:text-foreground"
-          >
-            <Search className="h-3.5 w-3.5" /> Find anything in StudyOS
-            <span className="ml-auto rounded-md border border-border px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">⌘K</span>
-          </button>
+          <SidebarSearch />
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <div className="eyebrow px-3 pb-2">Navigate</div>
@@ -75,7 +55,7 @@ export default function Layout() {
         <div className="border-t border-border p-3">
           <NavLink to="/profile" className="flex items-center gap-3 rounded-2xl border border-transparent bg-elevated px-3 py-2.5 hover:border-border hover:bg-elevated-high">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-sm font-semibold text-primary">{initials}</div>
-            <div className="min-w-0"><div className="truncate text-xs font-semibold text-foreground">{user?.full_name || user?.email || "Student"}</div><div className="text-[10px] text-muted-foreground">Open your profile</div></div>
+            <div className="min-w-0"><div className="truncate text-xs font-semibold text-foreground">{user?.full_name || user?.email || "Student"}</div></div>
           </NavLink>
         </div>
       </aside>
@@ -86,7 +66,7 @@ export default function Layout() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={openSearch}
+                onClick={openHomeSearch}
                 aria-label="Search StudyOS"
                 className="grid h-9 w-9 place-items-center rounded-xl border border-border bg-elevated text-muted-foreground"
               >

@@ -125,10 +125,9 @@ export default function Dashboard() {
       <div>
         <div className="eyebrow">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
         <h1 className="page-title mt-1.5 text-foreground">{greeting()}, {firstName}</h1>
-        <p className="page-subtitle">Here's what matters for your studies today.</p>
       </div>
 
-      <GlobalSearch concepts={concepts} subjects={subjects} boardId={profile?.board_id} />
+      <GlobalSearch />
 
       <DailyReminder concepts={concepts} openTasks={openTasks} />
 
@@ -210,7 +209,6 @@ export default function Dashboard() {
               <span className="font-display text-3xl font-semibold text-foreground">{profile.streak || 0}</span>
               <span className="text-[11px] text-muted-foreground">days</span>
             </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">Keep it going today</p>
           </StudyPanel>
 
           {/* Mastery */}
@@ -286,7 +284,6 @@ export default function Dashboard() {
         <div className="flex items-end justify-between mb-3">
           <div>
             <h2 className="font-display text-xl font-semibold text-foreground">StudyOS tools</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">AI capabilities across your whole academic graph</p>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
