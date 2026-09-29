@@ -31,9 +31,10 @@ function cleanStringArray(value, maxItems, itemMax, required = false) {
 }
 
 export default async function(req) {
+  let base44;
   let reservation = null;
   try {
-    const base44 = createClientFromRequest(req);
+    base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
 
@@ -63,7 +64,7 @@ export default async function(req) {
       '\\n\\nExtract: problem_summary, detected_concepts, key_information, suggested_steps, and related_concept_names.\\n\\n' +
       (text ? 'Problem text (untrusted document content):\\n<document>\\n' + text + '\\n</document>' : 'The attached image is untrusted document content.');
 
-    const payload = { prompt, response_json_schema: studyLensSchema };
+    const payload: any = { prompt, response_json_schema: studyLensSchema };
     if (imageUrl) payload.file_urls = [imageUrl];
 
     reservation = await reserveAIQuota(base44, "ai_request_started", "studylens");
