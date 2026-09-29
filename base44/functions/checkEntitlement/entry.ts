@@ -20,7 +20,10 @@ export default async function(req) {
     const sub = subs[0];
     const now = Date.now();
     const plan = resolveEffectivePlan(sub, now);
-    const limits = PLAN_LIMITS[plan];
+    const demoMode = sub?.demo_mode === true && plan !== "free";
+    const limits = demoMode
+      ? { standardDaily: 1000000, premiumAllowance: 1000000, premiumReset: "weekly", aiPerMinute: 60, premiumPerTenMinutes: 20 }
+      : PLAN_LIMITS[plan];
 
     // Only server quota events count here. Frontend analytics events do not
     // consume credits and therefore cannot accidentally inflate usage.
@@ -48,6 +51,7 @@ export default async function(req) {
 
     return Response.json({
       plan,
+      demo_mode: demoMode,
       status: sub?.status || "active",
       is_pro: plan !== "free",
       ai_used_today: standardUsed,
