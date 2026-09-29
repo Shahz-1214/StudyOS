@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
+import { useEntitlement } from "@/hooks/useEntitlement";
 import { base44 } from "@/api/base44Client";
 import { track, EVENTS } from "@/lib/analytics";
 import { uploadPrivateFile } from "@/lib/upload";
@@ -14,6 +15,10 @@ import { Loader2, ScanLine, ImagePlus, Type, Sparkles, AlertTriangle, ArrowRight
 export default function StudyLens() {
   const { user } = useAuth();
   const { profile, concepts, loading } = useStudyOSData();
+  // Demo Mode (the existing admin-only demo state) drops the upload size limits
+  // and the security-check stop for the demo administrator. The server remains
+  // the authority on both — the client never decides.
+  const { isDemoModeActive } = useEntitlement();
   const [tab, setTab] = useState("text");
   const [text, setText] = useState("");
   const [fileUri, setFileUri] = useState("");
@@ -32,9 +37,10 @@ export default function StudyLens() {
   // the normal upload-security pipeline once the server-verifiable token is
   // available.
   useEffect(() => {
-    if (!pendingFile || busy || (!tsBypass && !tsToken)) return;
+    if (!pendingFile || busy) return;
+    if (!isDemoModeActive && !tsBypass && !tsToken) return;
     processSelectedFile(pendingFile);
-  }, [pendingFile, busy, tsBypass, tsToken]);
+  }, [pendingFile, busy, tsBypass, tsToken, isDemoModeActive]);
 
   if (loading) return <PageSkeleton />;
   if (!user) return <Navigate to="/" replace />;
@@ -44,7 +50,7 @@ export default function StudyLens() {
     setBusy(true);
     setError(null);
     try {
-      const { file_uri, size } = await uploadPrivateFile("image", file, tsToken);
+      const { file_uri, size } = await uploadPrivateFile("image", file, tsToken, isDemoModeActive);
       setFileUri(file_uri);
       setFileSize(size);
       setPreviewUrl(URL.createObjectURL(file));
@@ -69,7 +75,7 @@ export default function StudyLens() {
 
     // Keep the picker usable even before Turnstile finishes. The file is not
     // uploaded or processed until the server-verifiable token is available.
-    if (!tsBypass && !tsToken) {
+    if (!isDemoModeActive && !tsBypass && !tsToken) {
       setPendingFile(file);
       setError("Complete the security check above; the selected photo will upload automatically.");
       return;
@@ -122,8 +128,10 @@ export default function StudyLens() {
           />
         ) : (
           <div>
-            <Turnstile action={TURNSTILE_ACTIONS.upload} onVerify={(token) => { setTsToken(token); if (token) setError(null); }} onBypass={() => setTsBypass(true)} resetKey={tsReset} className="mb-3" />
-            {(!tsBypass && !tsToken) && (
+            {!isDemoModeActive && (
+              <Turnstile action={TURNSTILE_ACTIONS.upload} onVerify={(token) => { setTsToken(token); if (token) setError(null); }} onBypass={() => setTsBypass(true)} resetKey={tsReset} className="mb-3" />
+            )}
+            {!isDemoModeActive && (!tsBypass && !tsToken) && (
               <div className="mb-3 rounded-lg border border-border bg-secondary/40 px-3 py-2 text-[11px] text-muted-foreground">
                 Complete the security check above before the photo is sent for malware scanning.
               </div>
@@ -131,7 +139,9 @@ export default function StudyLens() {
             <label className={`block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center ${busy ? "opacity-50 pointer-events-none" : "cursor-pointer hover:bg-secondary/40"}`}>
               <ImagePlus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
               <div className="text-sm text-foreground">{fileUri ? "Image uploaded ✓ — tap to replace" : "Tap to upload a photo of the problem"}</div>
-              <div className="text-[11px] text-muted-foreground mt-1">JPG, PNG, or WEBP — up to 3.5 MB</div>
+              <div className="text-[11px] text-muted-foreground mt-1">
+                {isDemoModeActive ? "JPG, PNG, or WEBP — any size in Demo Mode" : "JPG, PNG, or WEBP — up to 3.5 MB"}
+              </div>
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} disabled={busy} className="hidden" />
             </label>
             {previewUrl && <img src={previewUrl} alt="preview" className="mt-3 max-h-48 rounded-lg border border-border" />}

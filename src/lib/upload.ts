@@ -18,12 +18,17 @@ const AUDIO_TYPES = [
 // that the scanner will inevitably reject.
 const CLOUDMERSIVE_MAX_BYTES = 3_500_000;
 
-export function validateClientFile(kind: "image" | "audio", file: File) {
+// Demo Mode drops the size limits (the 3.5 MB scanner ceiling and the per-kind
+// caps) and the security-check requirement. The format allowlist stays, because
+// it reflects what the AI can actually read — dropping it would only produce a
+// confusing failure later.
+export function validateClientFile(kind: "image" | "audio", file: File, demoMode = false) {
   const allow = kind === "image" ? IMAGE_TYPES : AUDIO_TYPES;
   const max = kind === "image" ? 10 * 1024 * 1024 : 25 * 1024 * 1024;
   if (!allow.includes(file.type)) {
     return { ok: false as const, error: `Unsupported file type. Allowed: ${kind === "image" ? "JPG, PNG, WEBP" : "MP3, WAV, M4A, OGG, FLAC"}.` };
   }
+  if (demoMode) return { ok: true as const };
   if (file.size > max) {
     return { ok: false as const, error: `File too large. Max ${Math.round(max / 1024 / 1024)}MB.` };
   }
@@ -33,8 +38,8 @@ export function validateClientFile(kind: "image" | "audio", file: File) {
   return { ok: true as const };
 }
 
-export async function uploadPrivateFile(kind: "image" | "audio", file: File, turnstileToken: string = "") {
-  const v = validateClientFile(kind, file);
+export async function uploadPrivateFile(kind: "image" | "audio", file: File, turnstileToken: string = "", demoMode = false) {
+  const v = validateClientFile(kind, file, demoMode);
   if (!v.ok) throw new Error(v.error);
   const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
 
@@ -43,6 +48,8 @@ export async function uploadPrivateFile(kind: "image" | "audio", file: File, tur
   // AI/media processor ever receives an unapproved file URI. The Turnstile
   // token (upload action) is verified server-side inside the gate as an
   // anti-bot layer — it is NOT malware scanning or file sanitization.
+  // In Demo Mode the gate skips those stops for the demo administrator and
+  // writes the approval itself, so this call is always required.
   let scan;
   try {
     scan = await base44.functions.invoke("scanUploadedMedia", {

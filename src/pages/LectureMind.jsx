@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
+import { useEntitlement } from "@/hooks/useEntitlement";
 import { base44 } from "@/api/base44Client";
 import { track, EVENTS } from "@/lib/analytics";
 import { uploadPrivateFile } from "@/lib/upload";
@@ -14,6 +15,10 @@ import { Loader2, Headphones, Upload, Sparkles, AlertTriangle, FileText, Layers,
 export default function LectureMind() {
   const { user } = useAuth();
   const { profile, loading } = useStudyOSData();
+  // Demo Mode (the existing admin-only demo state) drops the upload size limits
+  // and the security-check stop for the demo administrator. The server remains
+  // the authority on both — the client never decides.
+  const { isDemoModeActive } = useEntitlement();
   const [title, setTitle] = useState("");
   const [audioUri, setAudioUri] = useState("");
   const [audioSize, setAudioSize] = useState(0);
@@ -41,7 +46,7 @@ export default function LectureMind() {
     if (!file) return;
     setBusy(true); setError(null);
     try {
-      const { file_uri, size } = await uploadPrivateFile("audio", file, tsToken);
+      const { file_uri, size } = await uploadPrivateFile("audio", file, tsToken, isDemoModeActive);
       setTsToken("");
       setTsReset((r) => r + 1);
       setAudioUri(file_uri);
@@ -106,11 +111,15 @@ export default function LectureMind() {
           <label className="eyebrow block mb-2">Lecture title (optional)</label>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Cell Biology — Lecture 4"
             className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-[14px] text-foreground mb-4 focus:outline-none focus:ring-2 focus:ring-primary" />
-          <Turnstile action={TURNSTILE_ACTIONS.upload} onVerify={setTsToken} onBypass={() => setTsBypass(true)} resetKey={tsReset} className="mb-3" />
-          <label className={`block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center ${(!tsBypass && !tsToken) ? "opacity-50 pointer-events-none" : "cursor-pointer hover:bg-secondary/40"}`}>
+          {!isDemoModeActive && (
+            <Turnstile action={TURNSTILE_ACTIONS.upload} onVerify={setTsToken} onBypass={() => setTsBypass(true)} resetKey={tsReset} className="mb-3" />
+          )}
+          <label className={`block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center ${(!isDemoModeActive && !tsBypass && !tsToken) ? "opacity-50 pointer-events-none" : "cursor-pointer hover:bg-secondary/40"}`}>
             <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
             <div className="text-sm text-foreground">{audioUri ? "Audio uploaded ✓ — tap to replace" : "Tap to upload an audio recording"}</div>
-            <div className="text-[11px] text-muted-foreground mt-1">mp3, wav, m4a, ogg, flac — up to 3.5 MB</div>
+            <div className="text-[11px] text-muted-foreground mt-1">
+              {isDemoModeActive ? "mp3, wav, m4a, ogg, flac — any size in Demo Mode" : "mp3, wav, m4a, ogg, flac — up to 3.5 MB"}
+            </div>
             <input type="file" accept="audio/*" onChange={onFile} className="hidden" />
           </label>
           <div className="flex justify-end mt-4">

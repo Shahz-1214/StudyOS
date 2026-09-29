@@ -3,6 +3,7 @@ import { secrets } from 'base44:runtime';
 import { validateUploadedFile, readQuarantinedBytes, sha256Hex, detectFileType, classifyUpload } from '../../shared/uploadSecurity.ts';
 import { sanitizeMedia } from '../../shared/mediaSanitize.ts';
 import { verifyTurnstileToken } from '../../shared/turnstileVerify.ts';
+import { demoOverrideActive } from '../../shared/demoOverride.ts';
 
 // Canonical security gate for every learner-uploaded media file. One gate,
 // consumed by every media processor (StudyLens images, LectureMind audio).
@@ -17,6 +18,9 @@ import { verifyTurnstileToken } from '../../shared/turnstileVerify.ts';
 // The quarantined original is never executed, rendered, or sent to AI. Only
 // the approved safe derivative (or, for formats without a rebuildable
 // derivative, the scanned + structure-validated original) is released.
+//
+// Demo Mode (the existing admin-only demo switch) skips the stops below for the
+// demo administrator only, and labels the verdict it writes as a demo override.
 
 const GENERIC_REJECT = 'That file could not be processed safely. Please upload a different file.';
 const GENERIC_UNAVAILABLE = 'Security checking is unavailable right now. Your file stays protected and was not processed. Please try again later.';
@@ -49,6 +53,46 @@ function getRemoteIp(req) {
   return '';
 }
 
+// Demo Mode verdict. The security stops are suspended for the demo
+// administrator (no size allowlist/ceiling, no anti-bot challenge, no rate
+// window, no malware-scan requirement), because the demo account is
+// admin-only and explicitly flagged. The verdict is still minted server-side
+// and carries explicit demo provenance, so it is never mistakable for a
+// scanned file.
+async function approveDemoUpload(base44, user, info) {
+  // The caller must still be able to read this private file with their OWN
+  // storage permission. Signing costs nothing and reads no bytes, so a demo
+  // upload has no size ceiling.
+  let accessible = false;
+  try {
+    const signed = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: info.fileUri, expires_in: 60 });
+    accessible = Boolean(signed?.signed_url);
+  } catch {
+    accessible = false;
+  }
+  if (!accessible) return json({ ok: false, error: GENERIC_REJECT, code: 'SOURCE_SIGN_URL_FAILED' }, 422);
+
+  await base44.asServiceRole.entities.MediaSecurityScan.create({
+    file_uri: info.fileUri,
+    owner_email: user.email,
+    media_kind: info.kind,
+    original_filename: info.originalFilename,
+    declared_mime_type: info.declaredMime,
+    detected_file_type: '',
+    file_size: typeof info.declaredSize === 'number' ? info.declaredSize : 0,
+    sha256: '',
+    status: 'approved',
+    malware_detected: false,
+    scanner_name: 'demo_mode_override',
+    scanner_version: '',
+    sanitization_status: 'pending',
+    sanitized_uri: '',
+    scan_timestamp: new Date().toISOString(),
+    rejection_reason_code: '',
+  });
+  return json({ ok: true, status: 'approved', demo: true }, 200);
+}
+
 export default async function(req) {
   let base44;
   try {
@@ -63,6 +107,13 @@ export default async function(req) {
     const originalFilename = String(body.original_filename || '').slice(0, 200);
     const declaredMime = String(body.declared_mime_type || '').slice(0, 100);
     if (!fileUri || !kind) return json({ ok: false, error: 'A valid media file is required.', code: 'INVALID_INPUT' }, 400);
+
+    // Demo Mode override (admin-only, server-verified). Returns before the size
+    // allowlist, the anti-bot challenge, the rate window and the malware scan,
+    // so a live demo is never stopped by a size or security gate.
+    if (await demoOverrideActive(base44)) {
+      return approveDemoUpload(base44, user, { fileUri, kind, originalFilename, declaredMime, declaredSize });
+    }
 
     // Stage 0: declared extension + declared size allowlist.
     const validation = validateUploadedFile(kind, fileUri, declaredSize);
