@@ -1,7 +1,7 @@
 {
   "name": "SubscriptionState",
   "type": "object",
-  "description": "Server-managed entitlement record. Create/update/delete are admin-only so the plan/status fields can never be self-upgraded by the record owner. Paid tiers are granted only by a server-side source of truth (e.g. a verified purchase webhook); the absence of a record is treated as the free tier. Owner-read is retained so the user can view their own plan, but they cannot modify it.",
+  "description": "Server-managed entitlement record. Demo mode is an internal admin-only presentation entitlement and is never user-writable.",
   "properties": {
     "plan": {
       "type": "string",
@@ -27,6 +27,15 @@
       "format": "date-time"
     },
     "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "demo_mode": {
+      "type": "boolean",
+      "default": false,
+      "description": "Internal admin-only Shipathon demo mode. Never writable by ordinary users."
+    },
+    "demo_activated_at": {
       "type": "string",
       "format": "date-time"
     }
