@@ -6,16 +6,22 @@ import MasteryBar from "@/components/MasteryBar";
 import VerifiedNotes from "@/components/resources/VerifiedNotes";
 import BookLibrary from "@/components/resources/BookLibrary";
 import { computeConceptStatus, STATUS_LABELS, statusColor, computeSubjectMastery } from "@/lib/learnerState";
+import { applyDemoMastery } from "@/lib/demoMastery";
+import { useEntitlement } from "@/hooks/useEntitlement";
 import PageSkeleton from "@/components/PageSkeleton";
 import { Layers, FileText, CalendarClock, Brain, BookOpen } from "lucide-react";
 
 export default function SubjectHub() {
   const { user } = useAuth();
   const { profile, subjects, concepts, loading } = useStudyOSData();
+  const { demoMastery } = useEntitlement();
 
   if (loading) return <PageSkeleton />;
   if (!user) return <Navigate to="/" replace />;
   if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
+
+  // Display-only demo override for the mastery figures shown here.
+  const displayConcepts = applyDemoMastery(concepts, demoMastery);
 
   return (
     <div className="max-w-[1000px] mx-auto px-5 md:px-8 py-6 md:py-8">
@@ -43,8 +49,8 @@ export default function SubjectHub() {
       ) : (
         <div className="space-y-4">
           {subjects.map((s) => {
-            const subs = concepts.filter((c) => c.subject_id === s.id);
-            const m = computeSubjectMastery(concepts, s.id);
+            const subs = displayConcepts.filter((c) => c.subject_id === s.id);
+            const m = computeSubjectMastery(displayConcepts, s.id);
             return (
               <StudyPanel key={s.id} className="p-5">
                 <div className="flex items-center justify-between mb-2">

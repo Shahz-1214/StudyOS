@@ -7,6 +7,8 @@ import {
   computeSubjectMastery, recommendNextConcept,
 } from "@/lib/learnerState";
 import { FEATURES } from "@/lib/features";
+import { applyDemoMastery } from "@/lib/demoMastery";
+import { useEntitlement } from "@/hooks/useEntitlement";
 import { subjectIcon } from "@/lib/subjectVisuals";
 import StudyPanel from "@/components/StudyPanel";
 import GlobalSearch from "@/components/GlobalSearch";
@@ -34,17 +36,23 @@ function greeting() {
 
 export default function Dashboard() {
   const { user, profile, subjects, concepts, exams, loading, error } = useStudyOSData();
+  const { demoMastery } = useEntitlement();
   const navigate = useNavigate();
   const [openTasks, setOpenTasks] = useState(null);
 
+  // Display-only demo override: while Demo Mode is active these figures read as
+  // the demo value. Stored records are untouched — write paths keep using the
+  // real `concepts` list.
+  const displayConcepts = useMemo(() => applyDemoMastery(concepts, demoMastery), [concepts, demoMastery]);
+
   const overallMastery = useMemo(() => {
-    if (!concepts.length) return 0;
-    return Math.round(concepts.reduce((s, c) => s + (c.mastery || 0), 0) / concepts.length);
-  }, [concepts]);
+    if (!displayConcepts.length) return 0;
+    return Math.round(displayConcepts.reduce((s, c) => s + (c.mastery || 0), 0) / displayConcepts.length);
+  }, [displayConcepts]);
 
   const recommendation = useMemo(
-    () => recommendNextConcept(concepts, subjects),
-    [concepts, subjects]
+    () => recommendNextConcept(displayConcepts, subjects),
+    [displayConcepts, subjects]
   );
 
   // Next PERSONAL exam (LearnerExam), not a board ExamSeries. Board series
@@ -129,7 +137,7 @@ export default function Dashboard() {
 
       <GlobalSearch />
 
-      <DailyReminder concepts={concepts} openTasks={openTasks} />
+      <DailyReminder concepts={displayConcepts} openTasks={openTasks} />
 
       {/* Priority section: dominant focus card + supporting priority stats */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
@@ -247,8 +255,8 @@ export default function Dashboard() {
             </StudyPanel>
           )}
           {subjects.map((s) => {
-            const m = computeSubjectMastery(concepts, s.id);
-            const subjConcepts = concepts.filter((c) => c.subject_id === s.id);
+            const m = computeSubjectMastery(displayConcepts, s.id);
+            const subjConcepts = displayConcepts.filter((c) => c.subject_id === s.id);
             const next = subjConcepts.length ? recommendNextConcept(subjConcepts, [s]) : null;
             const Icon = subjectIcon(s.name);
             const color = s.color || "#3B82F6";

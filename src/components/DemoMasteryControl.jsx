@@ -1,40 +1,34 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useEntitlement } from "@/hooks/useEntitlement";
 import { Slider } from "@/components/ui/slider";
 import { TrendingUp } from "lucide-react";
 
-// Demo-only control: sets the overall mastery shown across StudyOS by writing
-// the demo administrator's own stored concept mastery values, so every surface
-// (dashboard, progress, subject hub) stays consistent from the same records.
+// Demo-only mastery control. It sets a DISPLAY override: while Demo Mode is
+// active, StudyOS shows the chosen value as the mastery across its study views.
+// No stored concept mastery is ever changed, and the override ends when Demo
+// Mode is turned off.
 //
-// It renders only while the server-verified demo state is active, so ordinary
-// accounts never see it, and the write itself is re-checked server-side.
-export default function DemoMasteryControl({ concepts = [], onApplied }) {
-  const { isDemoModeActive } = useEntitlement();
+// `demoActive` comes from the page (the single entitlement read), and the write
+// is re-verified server-side against the admin + demo state.
+export default function DemoMasteryControl({ concepts = [], demoActive = false, onApplied }) {
   const [value, setValue] = useState(60);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  if (!isDemoModeActive) return null;
+  if (!demoActive) return null;
 
-  const current = concepts.length
+  const shown = concepts.length
     ? Math.round(concepts.reduce((s, c) => s + (c.mastery || 0), 0) / concepts.length)
     : 0;
 
   const apply = async () => {
-    if (!concepts.length) return;
-    const confirmed = window.confirm(
-      `Set your ${concepts.length} tracked concepts to about ${value}% mastery? This replaces your saved mastery values on this account.`
-    );
-    if (!confirmed) return;
     setBusy(true);
     setMessage("");
     setError("");
     try {
       await base44.functions.invoke("adminDemoMode", { action: "set_mastery", mastery: value });
-      setMessage(`Demo mastery set to ${value}%.`);
+      setMessage(`Demo Mode now displays ${value}% overall mastery.`);
       await onApplied?.();
     } catch (err) {
       setError(err?.response?.data?.error || err?.data?.error || "Could not change the demo mastery.");
@@ -47,12 +41,13 @@ export default function DemoMasteryControl({ concepts = [], onApplied }) {
     <div className="mt-5 pt-4 border-t border-border">
       <div className="flex flex-wrap items-center gap-2 mb-1">
         <TrendingUp className="w-4 h-4 text-primary" />
-        <div className="text-[13px] font-semibold text-foreground">Demo mastery control</div>
+        <div className="text-[13px] font-semibold text-foreground">Demo mastery display</div>
         <span className="text-[9px] font-bold uppercase tracking-wide rounded-full border border-primary/30 text-primary px-2 py-1">Demo only</span>
       </div>
       <p className="text-[12px] text-muted-foreground mb-3">
-        Sets the overall mastery shown across StudyOS by writing your stored concept mastery values.
-        Currently {current}% across {concepts.length} concept{concepts.length === 1 ? "" : "s"}.
+        Shows the chosen overall mastery across StudyOS while Demo Mode is on. Display only — your saved mastery values
+        stay exactly as they are, and the override ends when Demo Mode is turned off. Currently displaying {shown}%
+        across {concepts.length} concept{concepts.length === 1 ? "" : "s"}.
       </p>
       <div className="flex items-center gap-3">
         <Slider
@@ -74,9 +69,7 @@ export default function DemoMasteryControl({ concepts = [], onApplied }) {
         </button>
       </div>
       {!concepts.length && (
-        <div className="mt-3 text-[12px] text-muted-foreground">
-          Add subjects and concepts first — there is no stored mastery to set yet.
-        </div>
+        <div className="mt-3 text-[12px] text-muted-foreground">Add subjects and concepts first — the mastery display has no concepts yet.</div>
       )}
       {message && <div className="mt-3 text-xs font-semibold text-primary" role="status">{message}</div>}
       {error && <div className="mt-3 text-xs font-semibold text-destructive" role="alert">{error}</div>}

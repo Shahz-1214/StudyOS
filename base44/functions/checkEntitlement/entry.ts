@@ -55,6 +55,10 @@ export default async function(req) {
     return Response.json({
       plan,
       demo_mode: demoMode,
+      // Display-only demo mastery override (null unless the demo administrator
+      // has set one). Read-only surface: the app renders it while Demo Mode is
+      // active and never writes it back into learner records.
+      demo_mastery: demoMode && typeof sub?.demo_mastery === "number" ? sub.demo_mastery : null,
       status: sub?.status || "active",
       is_pro: plan !== "free",
       ai_used_today: standardUsed,

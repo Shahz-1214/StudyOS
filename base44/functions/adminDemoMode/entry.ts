@@ -1,18 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.44";
 import { isDemoModeActive } from "../../shared/subscriptionPlans.ts";
 
-// Mirrors the canonical thresholds in src/lib/learnerState.js
-// (computeConceptStatus). Duplicated because a backend function cannot import
-// client source modules; keep the two in step if the thresholds ever change.
-function conceptStatus(mastery: number) {
-  if (!Number.isFinite(mastery)) return "developing";
-  if (mastery < 35) return "critical_weakness";
-  if (mastery < 55) return "weak";
-  if (mastery < 75) return "developing";
-  if (mastery < 90) return "strong";
-  return "mastered";
-}
-
 const DEMO_CODE_HASH = "1c79ffa728981232e50f5d234ef3a7810756f123339907dfcc19d6a3ee79717f";
 
 async function sha256Hex(value: string) {
@@ -49,6 +37,8 @@ export default async function(req) {
         await base44.asServiceRole.entities.SubscriptionState.update(current.id, {
           demo_mode: false,
           demo_activated_at: null,
+          // The display-only mastery override ends with Demo Mode.
+          demo_mastery: null,
         });
       }
       await base44.asServiceRole.entities.DemoModeSession.updateMany(
@@ -58,22 +48,23 @@ export default async function(req) {
       return json({ ok: true, demo_mode: false, message: "Demo mode disabled." });
     }
 
-    // Demo-only mastery control. Admin identity is already verified above, and
-    // the demo state is re-verified here against the single shared demo
-    // predicate, so a non-demo caller can never reach the write.
+    // Demo-only mastery DISPLAY override. Admin identity is verified above and
+    // the demo state is re-verified here with the single shared demo predicate,
+    // so a non-demo caller can never reach this write.
     //
-    // It writes the caller's OWN stored concept mastery values (never another
-    // user's records), so the overall mastery displayed across StudyOS — the
-    // mean of concept mastery — becomes the chosen value. The spread is
-    // deterministic and zero-sum in pairs, so the resulting mean is exact
-    // rather than approximately on target.
+    // It stores ONE number on the caller's own server-managed SubscriptionState
+    // record. It never touches learner records: while Demo Mode is active the app
+    // renders that number as the mastery shown in its study views, stored concept
+    // mastery stays exactly as it is, and the override ends when Demo Mode is
+    // turned off.
     if (action === "set_mastery") {
       const demoSubs = await base44.asServiceRole.entities.SubscriptionState.filter(
         { created_by_id: user.id },
         "-created_date",
         5
       );
-      if (!isDemoModeActive(demoSubs?.[0])) {
+      const currentSub = demoSubs?.[0];
+      if (!isDemoModeActive(currentSub)) {
         return json({ error: "Demo Mode must be active to change the demo mastery.", code: "DEMO_REQUIRED" }, 403);
       }
 
@@ -83,28 +74,8 @@ export default async function(req) {
       }
       const target = Math.round(requested);
 
-      const rows = await base44.asServiceRole.entities.Concept.filter(
-        { created_by_id: user.id },
-        "-created_date",
-        300
-      );
-      const concepts = (rows || []).filter((c) => !c.archived);
-      if (!concepts.length) {
-        return json({ error: "Add subjects and concepts before setting a demo mastery.", code: "NO_CONCEPTS" }, 400);
-      }
-
-      const spread = Math.min(6, target, 100 - target);
-      const oddCount = concepts.length % 2 === 1;
-      const updates = concepts.map((c, index) => {
-        // Pairs carry +spread and -spread so the mean stays exact; with an odd
-        // number of concepts the unpaired last one sits exactly on the target.
-        const unpaired = oddCount && index === concepts.length - 1;
-        const mastery = spread === 0 || unpaired ? target : index % 2 === 0 ? target + spread : target - spread;
-        return { id: c.id, mastery, status: conceptStatus(mastery) };
-      });
-      await base44.asServiceRole.entities.Concept.bulkUpdate(updates);
-
-      return json({ ok: true, mastery: target, updated: updates.length });
+      await base44.asServiceRole.entities.SubscriptionState.update(currentSub.id, { demo_mastery: target });
+      return json({ ok: true, mastery: target, display_only: true });
     }
 
     const code = String(body?.code || "").trim().toUpperCase();

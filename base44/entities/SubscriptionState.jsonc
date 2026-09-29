@@ -38,6 +38,10 @@
     "demo_activated_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "demo_mastery": {
+      "type": "number",
+      "description": "Display-only demo mastery override (0-100). Written only by the admin-only adminDemoMode function while demo mode is active; the app renders it as the mastery shown across study views without changing any stored concept mastery. Absent when no override is set."
     }
   },
   "required": [

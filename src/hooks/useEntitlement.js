@@ -22,5 +22,13 @@ export function useEntitlement() {
   // The single frontend source for demo status: it mirrors the server's own
   // `demo_mode` from the same checkEntitlement call every credit surface
   // already uses. No second demo flag exists.
-  return { entitlement, loading, refresh, isDemoModeActive: entitlement?.demo_mode === true };
+  // Display-only demo mastery override: the value the study views render while
+  // Demo Mode is active, or null when no override is set. Stored concept
+  // mastery is never affected by it.
+  const demoMastery =
+    entitlement?.demo_mode === true && typeof entitlement?.demo_mastery === "number"
+      ? entitlement.demo_mastery
+      : null;
+
+  return { entitlement, loading, refresh, isDemoModeActive: entitlement?.demo_mode === true, demoMastery };
 }

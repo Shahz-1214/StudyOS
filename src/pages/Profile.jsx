@@ -5,6 +5,8 @@ import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { useAuth } from "@/lib/AuthContext";
 import { SUBJECT_PRESETS, EDUCATION_LEVELS, GOAL_PRESETS, STUDY_TIME_OPTIONS } from "@/lib/subjectPresets";
 import { computeConceptStatus, STATUS_LABELS, statusColor, computeSubjectMastery } from "@/lib/learnerState";
+import { applyDemoMastery } from "@/lib/demoMastery";
+import { useEntitlement } from "@/hooks/useEntitlement";
 import StudyPanel from "@/components/StudyPanel";
 import MasteryBar from "@/components/MasteryBar";
 import ThemePicker from "@/components/ThemePicker";
@@ -17,6 +19,7 @@ import { Plus, Trash2, X, BookOpen, Palette, Layers, Settings, Bell, CreditCard,
 export default function Profile() {
   const { user } = useAuth();
   const { profile, subjects, concepts, loading, error, reload } = useStudyOSData();
+  const { isDemoModeActive, demoMastery, refresh: refreshEntitlement } = useEntitlement();
   const [newSubject, setNewSubject] = useState("");
   const [newConcept, setNewConcept] = useState({}); // subjectId -> name
   const [saving, setSaving] = useState(false);
@@ -140,6 +143,10 @@ export default function Profile() {
   };
 
   const eduLabel = EDUCATION_LEVELS.find((l) => l.value === profile.education_level)?.label || profile.education_level;
+
+  // Display-only demo override for the mastery figures shown on this page; the
+  // stored concept records and every write path stay untouched.
+  const displayConcepts = applyDemoMastery(concepts, demoMastery);
 
   return (
     <div className="max-w-[1100px] mx-auto px-5 md:px-8 py-6 md:py-8">
@@ -273,7 +280,9 @@ export default function Profile() {
           </button>
         </div>
 
-        {user?.role === "admin" && <DemoMasteryControl concepts={concepts} onApplied={reload} />}
+        {user?.role === "admin" && (
+          <DemoMasteryControl concepts={displayConcepts} demoActive={isDemoModeActive} onApplied={refreshEntitlement} />
+        )}
       </StudyPanel>
 
       {/* Add subject */}
@@ -322,8 +331,8 @@ export default function Profile() {
           </StudyPanel>
         )}
         {subjects.map((s) => {
-          const subs = concepts.filter((c) => c.subject_id === s.id);
-          const m = computeSubjectMastery(concepts, s.id);
+          const subs = displayConcepts.filter((c) => c.subject_id === s.id);
+          const m = computeSubjectMastery(displayConcepts, s.id);
           return (
             <StudyPanel key={s.id} className="p-5">
               <div className="flex items-center justify-between mb-3">

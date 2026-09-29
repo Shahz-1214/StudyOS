@@ -4,6 +4,8 @@ import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { computeSubjectMastery, computeConceptStatus, STATUS_LABELS, statusColor } from "@/lib/learnerState";
+import { applyDemoMastery } from "@/lib/demoMastery";
+import { useEntitlement } from "@/hooks/useEntitlement";
 import StudyPanel from "@/components/StudyPanel";
 import MasteryBar from "@/components/MasteryBar";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
@@ -13,6 +15,7 @@ import { TrendingUp, AlertTriangle } from "lucide-react";
 export default function Progress() {
   const { user } = useAuth();
   const { profile, subjects, concepts, loading, error } = useStudyOSData();
+  const { demoMastery } = useEntitlement();
   const [attempts, setAttempts] = useState([]);
 
   useEffect(() => {
@@ -22,18 +25,21 @@ export default function Progress() {
       .catch(() => {});
   }, [user]);
 
+  // Display-only demo override for the mastery figures shown on this page.
+  const displayConcepts = useMemo(() => applyDemoMastery(concepts, demoMastery), [concepts, demoMastery]);
+
   const overall = useMemo(() => {
-    if (!concepts.length) return 0;
-    return Math.round(concepts.reduce((s, c) => s + (c.mastery || 0), 0) / concepts.length);
-  }, [concepts]);
+    if (!displayConcepts.length) return 0;
+    return Math.round(displayConcepts.reduce((s, c) => s + (c.mastery || 0), 0) / displayConcepts.length);
+  }, [displayConcepts]);
 
   const sortedConcepts = useMemo(
-    () => [...concepts].sort((a, b) => (a.mastery || 0) - (b.mastery || 0)),
-    [concepts]
+    () => [...displayConcepts].sort((a, b) => (a.mastery || 0) - (b.mastery || 0)),
+    [displayConcepts]
   );
 
-  const weakCount = concepts.filter((c) => (c.mastery || 0) < 55).length;
-  const masteredCount = concepts.filter((c) => (c.mastery || 0) >= 90).length;
+  const weakCount = displayConcepts.filter((c) => (c.mastery || 0) < 55).length;
+  const masteredCount = displayConcepts.filter((c) => (c.mastery || 0) >= 90).length;
 
   if (loading) return <PageSkeleton />;
   if (!user) return <Navigate to="/" replace />;
@@ -44,7 +50,11 @@ export default function Progress() {
       <div className="mb-6">
         <div className="eyebrow">Measurement</div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mt-1">Progress</h1>
-        <p className="text-sm text-muted-foreground mt-1">Every number below is derived from your stored concept mastery — no estimates, no fake data.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {demoMastery == null
+            ? "Every number below is derived from your stored concept mastery — no estimates, no fake data."
+            : "Demo Mode: the mastery figures below are a display override for this demo — your stored mastery values are unchanged."}
+        </p>
       </div>
 
       {error && (
@@ -106,7 +116,7 @@ export default function Progress() {
         <div className="space-y-4">
           {subjects.length === 0 && <p className="text-sm text-muted-foreground">No subjects yet.</p>}
           {subjects.map((s) => {
-            const m = computeSubjectMastery(concepts, s.id);
+            const m = computeSubjectMastery(displayConcepts, s.id);
             return (
               <div key={s.id} className="grid grid-cols-[120px_1fr_40px] items-center gap-3">
                 <span className="text-[13px] text-foreground truncate">{s.name}</span>
