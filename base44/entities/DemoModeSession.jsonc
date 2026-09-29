@@ -1,0 +1,48 @@
+{
+  "name": "DemoModeSession",
+  "type": "object",
+  "description": "Audit record for admin-only Shipathon demo mode activation.",
+  "properties": {
+    "activated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "activated_by_id": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "source": {
+      "type": "string",
+      "default": "admin_demo_code"
+    }
+  },
+  "required": [
+    "activated_at",
+    "activated_by_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
