@@ -14,9 +14,10 @@ const rubricSchema = {
 };
 
 export default async function(req) {
+  let base44;
   let reservation = null;
   try {
-    const base44 = createClientFromRequest(req);
+    base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
 
