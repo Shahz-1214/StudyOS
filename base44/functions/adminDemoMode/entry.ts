@@ -1,4 +1,17 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.44";
+import { isDemoModeActive } from "../../shared/subscriptionPlans.ts";
+
+// Mirrors the canonical thresholds in src/lib/learnerState.js
+// (computeConceptStatus). Duplicated because a backend function cannot import
+// client source modules; keep the two in step if the thresholds ever change.
+function conceptStatus(mastery: number) {
+  if (!Number.isFinite(mastery)) return "developing";
+  if (mastery < 35) return "critical_weakness";
+  if (mastery < 55) return "weak";
+  if (mastery < 75) return "developing";
+  if (mastery < 90) return "strong";
+  return "mastered";
+}
 
 const DEMO_CODE_HASH = "1c79ffa728981232e50f5d234ef3a7810756f123339907dfcc19d6a3ee79717f";
 
@@ -43,6 +56,55 @@ export default async function(req) {
         { $set: { active: false } }
       ).catch(() => {});
       return json({ ok: true, demo_mode: false, message: "Demo mode disabled." });
+    }
+
+    // Demo-only mastery control. Admin identity is already verified above, and
+    // the demo state is re-verified here against the single shared demo
+    // predicate, so a non-demo caller can never reach the write.
+    //
+    // It writes the caller's OWN stored concept mastery values (never another
+    // user's records), so the overall mastery displayed across StudyOS — the
+    // mean of concept mastery — becomes the chosen value. The spread is
+    // deterministic and zero-sum in pairs, so the resulting mean is exact
+    // rather than approximately on target.
+    if (action === "set_mastery") {
+      const demoSubs = await base44.asServiceRole.entities.SubscriptionState.filter(
+        { created_by_id: user.id },
+        "-created_date",
+        5
+      );
+      if (!isDemoModeActive(demoSubs?.[0])) {
+        return json({ error: "Demo Mode must be active to change the demo mastery.", code: "DEMO_REQUIRED" }, 403);
+      }
+
+      const requested = Number(body?.mastery);
+      if (!Number.isFinite(requested) || requested < 0 || requested > 100) {
+        return json({ error: "Choose a mastery between 0 and 100.", code: "INVALID_MASTERY" }, 400);
+      }
+      const target = Math.round(requested);
+
+      const rows = await base44.asServiceRole.entities.Concept.filter(
+        { created_by_id: user.id },
+        "-created_date",
+        300
+      );
+      const concepts = (rows || []).filter((c) => !c.archived);
+      if (!concepts.length) {
+        return json({ error: "Add subjects and concepts before setting a demo mastery.", code: "NO_CONCEPTS" }, 400);
+      }
+
+      const spread = Math.min(6, target, 100 - target);
+      const oddCount = concepts.length % 2 === 1;
+      const updates = concepts.map((c, index) => {
+        // Pairs carry +spread and -spread so the mean stays exact; with an odd
+        // number of concepts the unpaired last one sits exactly on the target.
+        const unpaired = oddCount && index === concepts.length - 1;
+        const mastery = spread === 0 || unpaired ? target : index % 2 === 0 ? target + spread : target - spread;
+        return { id: c.id, mastery, status: conceptStatus(mastery) };
+      });
+      await base44.asServiceRole.entities.Concept.bulkUpdate(updates);
+
+      return json({ ok: true, mastery: target, updated: updates.length });
     }
 
     const code = String(body?.code || "").trim().toUpperCase();

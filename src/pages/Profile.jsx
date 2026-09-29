@@ -8,6 +8,7 @@ import { computeConceptStatus, STATUS_LABELS, statusColor, computeSubjectMastery
 import StudyPanel from "@/components/StudyPanel";
 import MasteryBar from "@/components/MasteryBar";
 import ThemePicker from "@/components/ThemePicker";
+import DemoMasteryControl from "@/components/DemoMasteryControl";
 import { Switch } from "@/components/ui/switch";
 import { NOTIFICATION_PREF_DEFS, getNotificationPrefs, setNotificationPrefs } from "@/lib/appSettings";
 import PageSkeleton from "@/components/PageSkeleton";
@@ -271,6 +272,8 @@ export default function Profile() {
             <LogOut className="w-4 h-4" /> Sign out
           </button>
         </div>
+
+        {user?.role === "admin" && <DemoMasteryControl concepts={concepts} onApplied={reload} />}
       </StudyPanel>
 
       {/* Add subject */}
