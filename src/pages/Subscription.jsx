@@ -81,6 +81,10 @@ export default function Subscription() {
   const [redeemingCode, setRedeemingCode] = useState(false);
   const [codeMessage, setCodeMessage] = useState("");
   const [codeError, setCodeError] = useState("");
+  const [demoCode, setDemoCode] = useState("");
+  const [demoBusy, setDemoBusy] = useState(false);
+  const [demoMessage, setDemoMessage] = useState("");
+  const [demoError, setDemoError] = useState("");
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -107,6 +111,43 @@ export default function Subscription() {
   if (!profile || !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 
   const currentPlan = entitlement?.plan || "free";
+
+  async function activateDemoMode(event) {
+    event.preventDefault();
+    setDemoError("");
+    setDemoMessage("");
+    const code = demoCode.trim().toUpperCase();
+    if (!code) {
+      setDemoError("Enter the administrator demo access code.");
+      return;
+    }
+    setDemoBusy(true);
+    try {
+      const res = await base44.functions.invoke("adminDemoMode", { action: "activate", code });
+      setDemoMessage(res?.data?.message || "Shipathon Demo Mode activated.");
+      setDemoCode("");
+      await entitlement.refresh();
+    } catch (error) {
+      setDemoError(error?.response?.data?.error || error?.data?.error || "Could not activate Demo Mode.");
+    } finally {
+      setDemoBusy(false);
+    }
+  }
+
+  async function deactivateDemoMode() {
+    setDemoError("");
+    setDemoMessage("");
+    setDemoBusy(true);
+    try {
+      const res = await base44.functions.invoke("adminDemoMode", { action: "deactivate" });
+      setDemoMessage(res?.data?.message || "Demo mode disabled.");
+      await entitlement.refresh();
+    } catch (error) {
+      setDemoError(error?.response?.data?.error || error?.data?.error || "Could not disable Demo Mode.");
+    } finally {
+      setDemoBusy(false);
+    }
+  }
 
   async function redeemCode(event) {
     event.preventDefault();
@@ -296,6 +337,51 @@ export default function Subscription() {
           </div>
         </div>
       </StudyPanel>
+
+      {user?.role === "admin" && (
+        <StudyPanel className="p-5 mt-5 border-primary/30">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 grid place-items-center shrink-0">
+              <KeyRound className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex-1">
+              <div className="eyebrow">Administrator · Shipathon</div>
+              <h2 className="text-lg font-bold text-foreground mt-1">Demo Mode</h2>
+              <p className="text-[12px] text-muted-foreground mt-1">
+                Private demo entitlement for the app owner. It is enforced server-side and is invisible to ordinary accounts.
+              </p>
+              {entitlement?.demo_mode ? (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-4">
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary" role="status">
+                    Demo Mode is active · high demo quotas enabled
+                  </div>
+                  <button type="button" onClick={deactivateDemoMode} disabled={demoBusy} className="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground disabled:opacity-50">
+                    {demoBusy ? "Working…" : "Disable Demo Mode"}
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={activateDemoMode} className="flex flex-col sm:flex-row gap-2 mt-4">
+                  <input
+                    value={demoCode}
+                    onChange={(e) => setDemoCode(e.target.value.toUpperCase())}
+                    autoComplete="off"
+                    spellCheck={false}
+                    maxLength={64}
+                    placeholder="ADMIN DEMO ACCESS CODE"
+                    className="flex-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-mono text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                    aria-label="Administrator demo access code"
+                  />
+                  <button type="submit" disabled={demoBusy || !demoCode.trim()} className="rounded-lg bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold disabled:opacity-50">
+                    {demoBusy ? "Activating…" : "Enter Demo Mode"}
+                  </button>
+                </form>
+              )}
+              {demoMessage && <div className="mt-3 text-xs font-semibold text-primary" role="status">{demoMessage}</div>}
+              {demoError && <div className="mt-3 text-xs font-semibold text-destructive" role="alert">{demoError}</div>}
+            </div>
+          </div>
+        </StudyPanel>
+      )}
 
       <p className="text-[11px] text-muted-foreground mt-5 px-1">
         Launch pricing is staged for the current entitlement prototype. Payments remain disabled until a verified RevenueCat purchase path is connected, so the app cannot accidentally grant or charge for a plan from this page.
