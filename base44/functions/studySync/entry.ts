@@ -31,7 +31,7 @@ export default async function(req) {
     };
 
     // 1. Low-accuracy quiz concepts → high-priority review tasks.
-    const acc = {};
+    const acc: Record<string, { correct: number; total: number }> = {};
     for (const a of attempts) {
       for (const ans of a.answers || []) {
         if (!ans.concept_id) continue;
