@@ -19,5 +19,8 @@ export function useEntitlement() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  return { entitlement, loading, refresh };
+  // The single frontend source for demo status: it mirrors the server's own
+  // `demo_mode` from the same checkEntitlement call every credit surface
+  // already uses. No second demo flag exists.
+  return { entitlement, loading, refresh, isDemoModeActive: entitlement?.demo_mode === true };
 }

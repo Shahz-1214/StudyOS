@@ -75,7 +75,7 @@ function formatCountdown(ms) {
 export default function Subscription() {
   const { user } = useAuth();
   const { profile, loading } = useStudyOSData();
-  const { entitlement, loading: entLoading } = useEntitlement();
+  const { entitlement, loading: entLoading, isDemoModeActive } = useEntitlement();
   const [now, setNow] = useState(Date.now());
   const [accessCode, setAccessCode] = useState("");
   const [redeemingCode, setRedeemingCode] = useState(false);
@@ -215,13 +215,17 @@ export default function Subscription() {
           <div className="rounded-lg bg-secondary/50 px-3 py-3">
             <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Standard AI</div>
             <div className="mt-1 text-lg font-bold text-foreground">
-              {entitlement?.remaining ?? 0} <span className="text-xs font-medium text-muted-foreground">/ {entitlement?.ai_limit ?? 0} left</span>
+              {isDemoModeActive
+                ? "Unlimited"
+                : <>{entitlement?.remaining ?? 0} <span className="text-xs font-medium text-muted-foreground">/ {entitlement?.ai_limit ?? 0} left</span></>}
             </div>
           </div>
           <div className="rounded-lg bg-secondary/50 px-3 py-3">
             <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Pro credits</div>
             <div className="mt-1 text-lg font-bold text-foreground">
-              {entitlement?.premium_remaining ?? 0} <span className="text-xs font-medium text-muted-foreground">/ {entitlement?.premium_limit ?? 0} left · {entitlement?.premium_reset_type ?? "monthly"}</span>
+              {isDemoModeActive
+                ? "Unlimited"
+                : <>{entitlement?.premium_remaining ?? 0} <span className="text-xs font-medium text-muted-foreground">/ {entitlement?.premium_limit ?? 0} left · {entitlement?.premium_reset_type ?? "monthly"}</span></>}
             </div>
           </div>
         </div>
@@ -350,10 +354,10 @@ export default function Subscription() {
               <p className="text-[12px] text-muted-foreground mt-1">
                 Private demo entitlement for the app owner. It is enforced server-side and is invisible to ordinary accounts.
               </p>
-              {entitlement?.demo_mode ? (
+              {isDemoModeActive ? (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-4">
                   <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary" role="status">
-                    Demo Mode is active · high demo quotas enabled
+                    Demo Mode is active · unlimited AI · no credits deducted
                   </div>
                   <button type="button" onClick={deactivateDemoMode} disabled={demoBusy} className="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground disabled:opacity-50">
                     {demoBusy ? "Working…" : "Disable Demo Mode"}

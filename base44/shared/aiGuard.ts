@@ -1,19 +1,19 @@
 import {
   PLAN_LIMITS,
+  DEMO_LIMITS,
   resolveEffectivePlan,
+  isDemoModeActive,
   getPremiumPeriodStart,
   getNextPremiumReset,
 } from './subscriptionPlans.ts';
 
 const RESERVATION_EVENT = "ai_quota_reserved";
 const REFUNDED_EVENT = "ai_quota_refunded";
-const DEMO_LIMITS = {
-  standardDaily: 1_000_000,
-  premiumAllowance: 1_000_000,
-  premiumReset: "weekly",
-  aiPerMinute: 60,
-  premiumPerTenMinutes: 20,
-};
+// Demo activity is recorded under its own event name. The two event names every
+// quota counter reads ("ai_request_started", "premium_ai_action") are never
+// written on the demo path, so demo use can neither consume a credit nor shift
+// a later normal-mode limit.
+const DEMO_EVENT = "demo_ai_action";
 
 function nowIso() {
   return new Date().toISOString();
@@ -32,11 +32,13 @@ function activeReservations(events, nowMs) {
   });
 }
 
-async function loadPlanAndEvents(base44, now) {
+async function loadSubscription(base44, now) {
   const subs = await base44.entities.SubscriptionState.list("-created_date", 1);
   const sub = subs[0];
-  const plan = resolveEffectivePlan(sub, now);
-  const limits = sub?.demo_mode === true && plan !== "free" ? DEMO_LIMITS : PLAN_LIMITS[plan];
+  return { sub, plan: resolveEffectivePlan(sub, now) };
+}
+
+async function loadUsageEvents(base44, now) {
   const [completed, reservations] = await Promise.all([
     base44.entities.Event.filter(
       { event_name: { $in: ["ai_request_started", "premium_ai_action"] } },
@@ -49,7 +51,60 @@ async function loadPlanAndEvents(base44, now) {
       400
     ),
   ]);
-  return { sub, plan, limits, completed: completed || [], reservations: activeReservations(reservations || [], now) };
+  return { completed: completed || [], reservations: activeReservations(reservations || [], now) };
+}
+
+// The demo override is honoured only for an administrator. Any other caller
+// falls through to the normal metered path below.
+async function isAuthorizedDemoCaller(base44) {
+  const caller = await base44.auth.me().catch(() => null);
+  return caller?.role === "admin";
+}
+
+/**
+ * Demo Mode reservation. The demo account is not metered: no credit is reserved
+ * and none can be deducted, and no credit or subscription blocker can be
+ * returned. The action is still recorded — as demo activity, under a
+ * non-billable event name — so the demo stays debuggable without touching the
+ * credit ledger. The only ceiling kept is the per-minute burst limit, which
+ * protects backend and provider availability rather than demo usage.
+ */
+async function reserveDemoAction(base44, now, eventName, premiumFeature, plan) {
+  const minuteAgo = now - 60_000;
+  const recent = await base44.entities.Event.filter(
+    { event_name: DEMO_EVENT },
+    "-occurred_at",
+    DEMO_LIMITS.aiPerMinute + 1
+  );
+  const inMinute = (recent || []).filter((e) => safeEventDate(e) >= minuteAgo).length;
+  if (inMinute >= DEMO_LIMITS.aiPerMinute) {
+    return Response.json(
+      { error: "Too many AI requests right now. Please wait a minute and try again.", code: "RATE_LIMITED" },
+      { status: 429 }
+    );
+  }
+
+  const created = await base44.entities.Event.create({
+    event_name: DEMO_EVENT,
+    properties: {
+      source: "server_ai_guard",
+      demo: true,
+      billable: false,
+      plan,
+      feature: premiumFeature || eventName,
+      status: "demo_reserved",
+      reservation_id: crypto.randomUUID(),
+    },
+    occurred_at: nowIso(),
+  });
+
+  return {
+    demo: true,
+    reservationId: created.id || "",
+    reservationKey: created.id || "",
+    countedEvent: DEMO_EVENT,
+    premiumFeature: premiumFeature || "",
+  };
 }
 
 function countWindow(events, predicate) {
@@ -80,7 +135,19 @@ async function releaseReservation(base44, reservationId, status = "refunded") {
  */
 export async function reserveAIQuota(base44, eventName = "ai_request_started", premiumFeature = "") {
   const now = Date.now();
-  const { plan, limits, completed, reservations } = await loadPlanAndEvents(base44, now);
+  const { sub, plan } = await loadSubscription(base44, now);
+
+  // ---- Demo Mode override (existing admin-only demo state) ----------------
+  // Nothing is reserved, deducted or counted, and no credit or subscription
+  // blocker can be returned. Everything else — input validation, provider
+  // calls, real provider/backend errors, security checks — behaves exactly as
+  // it does for any other account.
+  if (isDemoModeActive(sub, now) && (await isAuthorizedDemoCaller(base44))) {
+    return reserveDemoAction(base44, now, eventName, premiumFeature, plan);
+  }
+
+  const limits = PLAN_LIMITS[plan];
+  const { completed, reservations } = await loadUsageEvents(base44, now);
   const isPremium = Boolean(premiumFeature);
   const countedEvent = isPremium ? "premium_ai_action" : eventName;
   const minuteAgo = now - 60_000;
@@ -165,7 +232,7 @@ export async function reserveAIQuota(base44, eventName = "ai_request_started", p
     occurred_at: nowIso(),
   });
 
-  const verification = await loadPlanAndEvents(base44, Date.now());
+  const verification = await loadUsageEvents(base44, Date.now());
   const verificationCompleted = verification.completed;
   const verificationReservations = verification.reservations;
   const verifyNow = Date.now();
@@ -216,6 +283,22 @@ export async function reserveAIQuota(base44, eventName = "ai_request_started", p
 
 export async function commitAIQuota(base44, reservation) {
   if (!reservation?.reservationId) return;
+  // Demo work is recorded, never billed: the row keeps its non-billable demo
+  // name, so it can never be counted against a real allowance.
+  if (reservation.demo) {
+    await base44.asServiceRole.entities.Event.update(reservation.reservationId, {
+      event_name: DEMO_EVENT,
+      properties: {
+        source: "server_ai_guard",
+        demo: true,
+        billable: false,
+        feature: reservation.premiumFeature || DEMO_EVENT,
+        status: "demo_completed",
+        committed_at: nowIso(),
+      },
+    }).catch(() => {});
+    return;
+  }
   await base44.asServiceRole.entities.Event.update(reservation.reservationId, {
     event_name: reservation.countedEvent || "ai_request_started",
     properties: {
@@ -230,6 +313,21 @@ export async function commitAIQuota(base44, reservation) {
 
 export async function refundAIQuota(base44, reservation) {
   if (!reservation?.reservationId) return;
+  // On the demo path no credit was ever taken, so the record is only annotated.
+  if (reservation.demo) {
+    await base44.asServiceRole.entities.Event.update(reservation.reservationId, {
+      event_name: DEMO_EVENT,
+      properties: {
+        source: "server_ai_guard",
+        demo: true,
+        billable: false,
+        feature: reservation.premiumFeature || DEMO_EVENT,
+        status: "demo_not_charged",
+        updated_at: nowIso(),
+      },
+    }).catch(() => {});
+    return;
+  }
   await releaseReservation(base44, reservation.reservationId, "refunded");
 }
 

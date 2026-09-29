@@ -48,6 +48,39 @@ export function resolveEffectivePlan(sub: any, now = Date.now()): StudyOSPlan {
   return sub.plan;
 }
 
+// ---------------------------------------------------------------------------
+// Demo Mode — the existing admin-only Shipathon demo state.
+//
+// There is exactly ONE demo state: the server-written `demo_mode` flag on the
+// caller's own SubscriptionState record. This shared predicate is the only
+// place that decides whether the override is active, so every credit and
+// subscription gate reads the same status. Nothing here is client-writable:
+// the flag is written only by the admin-only adminDemoMode function.
+// ---------------------------------------------------------------------------
+
+/**
+ * True only when the demo override is genuinely active: the flag is present AND
+ * the entitlement it sits on is still active and unexpired. A missing, invalid,
+ * cancelled, expired or tampered state resolves to false, so the normal
+ * production credit and subscription rules always apply unless the demo state
+ * is valid.
+ */
+export function isDemoModeActive(sub: any, now = Date.now()): boolean {
+  return sub?.demo_mode === true && resolveEffectivePlan(sub, now) !== "free";
+}
+
+// Reported and enforced ceilings while the demo override is active. The credit
+// ceilings are reported for display only — during a demo no credit is ever
+// counted. The per-minute ceiling is the one limit actually kept, because it
+// protects backend and provider availability rather than demo usage.
+export const DEMO_LIMITS = {
+  standardDaily: 1_000_000,
+  premiumAllowance: 1_000_000,
+  premiumReset: "weekly",
+  aiPerMinute: 60,
+  premiumPerTenMinutes: 20,
+} as const;
+
 export function getNextUtcReset(now = new Date()) {
   const next = new Date(now);
   next.setUTCHours(24, 0, 0, 0);

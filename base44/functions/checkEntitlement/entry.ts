@@ -1,7 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import {
   PLAN_LIMITS,
+  DEMO_LIMITS,
   resolveEffectivePlan,
+  isDemoModeActive,
   getNextUtcReset,
   getPremiumPeriodStart,
   getNextPremiumReset,
@@ -20,10 +22,11 @@ export default async function(req) {
     const sub = subs[0];
     const now = Date.now();
     const plan = resolveEffectivePlan(sub, now);
-    const demoMode = sub?.demo_mode === true && plan !== "free";
-    const limits = demoMode
-      ? { standardDaily: 1000000, premiumAllowance: 1000000, premiumReset: "weekly", aiPerMinute: 60, premiumPerTenMinutes: 20 }
-      : PLAN_LIMITS[plan];
+    // One shared demo gate — the same predicate the AI guard uses. It requires
+    // the server-written demo flag, a still-valid entitlement, and an
+    // administrator; otherwise the normal production limits apply.
+    const demoMode = isDemoModeActive(sub, now) && user.role === "admin";
+    const limits = demoMode ? DEMO_LIMITS : PLAN_LIMITS[plan];
 
     // Only server quota events count here. Frontend analytics events do not
     // consume credits and therefore cannot accidentally inflate usage.
