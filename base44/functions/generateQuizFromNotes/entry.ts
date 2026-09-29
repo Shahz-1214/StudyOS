@@ -5,9 +5,10 @@ import { buildLearnerContext, AI_FACT_RULE, AI_UNTRUSTED_CONTENT_RULE } from '..
 import { serverError } from '../../shared/http.ts';
 
 export default async function(req) {
+  let base44;
   let reservation = null;
   try {
-    const base44 = createClientFromRequest(req);
+    base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
 
