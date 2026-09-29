@@ -7,6 +7,13 @@ import {
 
 const RESERVATION_EVENT = "ai_quota_reserved";
 const REFUNDED_EVENT = "ai_quota_refunded";
+const DEMO_LIMITS = {
+  standardDaily: 1_000_000,
+  premiumAllowance: 1_000_000,
+  premiumReset: "weekly",
+  aiPerMinute: 60,
+  premiumPerTenMinutes: 20,
+};
 
 function nowIso() {
   return new Date().toISOString();
@@ -29,7 +36,7 @@ async function loadPlanAndEvents(base44, now) {
   const subs = await base44.entities.SubscriptionState.list("-created_date", 1);
   const sub = subs[0];
   const plan = resolveEffectivePlan(sub, now);
-  const limits = PLAN_LIMITS[plan];
+  const limits = sub?.demo_mode === true && plan !== "free" ? DEMO_LIMITS : PLAN_LIMITS[plan];
   const [completed, reservations] = await Promise.all([
     base44.entities.Event.filter(
       { event_name: { $in: ["ai_request_started", "premium_ai_action"] } },
