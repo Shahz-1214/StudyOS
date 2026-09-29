@@ -139,9 +139,7 @@ export default function StudyLens() {
             <label className={`block w-full rounded-lg border-2 border-dashed border-border bg-card px-4 py-10 text-center ${busy ? "opacity-50 pointer-events-none" : "cursor-pointer hover:bg-secondary/40"}`}>
               <ImagePlus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
               <div className="text-sm text-foreground">{fileUri ? "Image uploaded ✓ — tap to replace" : "Tap to upload a photo of the problem"}</div>
-              <div className="text-[11px] text-muted-foreground mt-1">
-                {isDemoModeActive ? "JPG, PNG, or WEBP — any size in Demo Mode" : "JPG, PNG, or WEBP — up to 3.5 MB"}
-              </div>
+              <div className="text-[11px] text-muted-foreground mt-1">JPG, PNG, or WEBP — up to 3.5 MB</div>
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} disabled={busy} className="hidden" />
             </label>
             {previewUrl && <img src={previewUrl} alt="preview" className="mt-3 max-h-48 rounded-lg border border-border" />}
