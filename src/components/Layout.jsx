@@ -1,10 +1,10 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { STUDY_FEATURES, PLAN_FEATURES } from "@/lib/features";
 import AppFooter from "@/components/AppFooter";
 import PageErrorBoundary from "@/components/errors/PageErrorBoundary";
 import SidebarSearch from "@/components/SidebarSearch";
-import { Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine, CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain, AlertCircle, CreditCard, Settings, Layers, Archive, Search } from "lucide-react";
+import { Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine, CalendarClock, CheckSquare, RefreshCw, Timer, Circle, Brain, AlertCircle, CreditCard, Settings, Layers, Archive } from "lucide-react";
 
 const ICONS = { Home, TrendingUp, User, ScanLine, GraduationCap, FileText, Headphones, PenLine, CalendarClock, CheckSquare, RefreshCw, Timer, Brain, AlertCircle, CreditCard, Settings, Layers, Archive };
 function NavIcon({ name, className = "" }) { const I = ICONS[name] || Circle; return <I className={className} strokeWidth={2} />; }
@@ -18,12 +18,7 @@ const PRIMARY_NAV = [
 
 export default function Layout() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const initials = (user?.full_name || user?.email || "S").trim().charAt(0).toUpperCase();
-
-  // The sidebar owns search on desktop (⌘K included). This is the mobile entry
-  // point: the header button hands off to the Home bar, which focuses itself.
-  const openHomeSearch = () => navigate("/", { state: { focusSearch: Date.now() } });
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -60,22 +55,6 @@ export default function Layout() {
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-border bg-background px-4 py-3 md:hidden">
-          <div className="flex items-center justify-between">
-            <div className="brand-wordmark text-xl font-semibold text-foreground">StudyOS</div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={openHomeSearch}
-                aria-label="Search StudyOS"
-                className="grid h-9 w-9 place-items-center rounded-xl border border-border bg-elevated text-muted-foreground"
-              >
-                <Search className="h-4 w-4" />
-              </button>
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary">{initials}</div>
-            </div>
-          </div>
-        </header>
         <main className="min-w-0 flex-1 pb-20 md:pb-0"><PageErrorBoundary><Outlet /></PageErrorBoundary></main>
         <AppFooter />
       </div>
