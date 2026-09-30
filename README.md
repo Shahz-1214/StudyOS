@@ -60,3 +60,10 @@ GitHub integration: [https://docs.base44.com/developers/app-code/local-developme
 Local development: [https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview](https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview)
 
 Support: [https://app.base44.com/support](https://app.base44.com/support)
+
+## Payments (RevenueCat)
+
+The subscription purchase path is set up and documented in
+[REVENUECAT_SETUP.md](./REVENUECAT_SETUP.md): the RevenueCat project, entitlements and
+offering, the required app secrets, the webhook endpoint and how to verify a purchase
+end to end.

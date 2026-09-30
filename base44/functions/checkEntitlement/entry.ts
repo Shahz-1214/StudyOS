@@ -1,14 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { secrets } from 'base44:runtime';
 import {
   PLAN_LIMITS,
   DEMO_LIMITS,
-  resolveEffectivePlan,
+  PLAN_DISPLAY_NAMES,
+  resolveEntitlement,
   isDemoModeActive,
   getNextUtcReset,
   getPremiumPeriodStart,
   getNextPremiumReset,
   PREMIUM_FEATURES,
 } from '../../shared/subscriptionPlans.ts';
+import { REVENUECAT_ENTITLEMENT_PLANS } from '../../shared/revenueCat.ts';
 
 export default async function(req) {
   try {
@@ -21,7 +24,17 @@ export default async function(req) {
     const subs = await base44.entities.SubscriptionState.list("-created_date", 1);
     const sub = subs[0];
     const now = Date.now();
-    const plan = resolveEffectivePlan(sub, now);
+    // The publishable web key is the ONLY RevenueCat key the browser ever
+    // receives. It is delivered as configuration from here rather than
+    // hardcoded in the repository; the secret API key and the webhook secret
+    // stay server-side.
+    const publicWebKey = (secrets.get("REVENUECAT_PUBLIC_WEB_KEY") || "").trim();
+    // One deterministic resolution over both grants on the record — the
+    // access-code base grant and the RevenueCat grant. The valid grant with the
+    // furthest expiry wins, so a lapsed RevenueCat subscription cannot downgrade
+    // a learner who still holds a valid access-code grant (and vice versa).
+    const resolved = resolveEntitlement(sub, now);
+    const plan = resolved.plan;
     // One shared demo gate — the same predicate the AI guard uses. It requires
     // the server-written demo flag, a still-valid entitlement, and an
     // administrator; otherwise the normal production limits apply.
@@ -54,6 +67,9 @@ export default async function(req) {
 
     return Response.json({
       plan,
+      plan_display_name: PLAN_DISPLAY_NAMES[plan],
+      plan_source: resolved.source,
+      plan_expires_at: resolved.expires_at,
       demo_mode: demoMode,
       // Display-only demo mastery override (null unless the demo administrator
       // has set one). Read-only surface: the app renders it while Demo Mode is
@@ -76,6 +92,27 @@ export default async function(req) {
       next_reset_at: getNextUtcReset(new Date()).toISOString(),
       expires_at: sub?.expires_at || null,
       trial_ends_at: sub?.trial_ends_at || null,
+      // Purchase configuration for the existing subscription surface. Absent or
+      // false here means the purchase action must stay honestly unavailable
+      // rather than offer a button that cannot complete.
+      purchase: {
+        provider: "revenuecat",
+        configured: Boolean(publicWebKey),
+        public_api_key: publicWebKey || null,
+        // Delivered from the server so the RevenueCat entitlement -> StudyOS
+        // plan mapping has exactly one source of truth.
+        entitlement_map: REVENUECAT_ENTITLEMENT_PLANS,
+      },
+      // The RevenueCat grant as recorded, for display and diagnosis only. The
+      // effective plan above is what every gate reads.
+      revenuecat_grant: sub?.rc_plan && sub.rc_plan !== "free"
+        ? {
+            plan: sub.rc_plan,
+            status: sub.rc_status || "expired",
+            expires_at: sub.rc_expires_at || null,
+            product_id: sub.rc_product_id || "",
+          }
+        : null,
     });
   } catch {
     return Response.json({ error: "Could not load subscription state. Please try again.", code: "INTERNAL_ERROR" }, { status: 500 });

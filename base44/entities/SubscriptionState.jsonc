@@ -1,7 +1,7 @@
 {
   "name": "SubscriptionState",
   "type": "object",
-  "description": "Server-managed entitlement record. Demo mode is an internal admin-only presentation entitlement and is never user-writable.",
+  "description": "Server-managed entitlement record. Demo mode is an internal admin-only presentation entitlement and is never user-writable. The plan/status/expires_at/trial_ends_at fields are the base grant written by access-code redemption; the rc_* fields are the separate RevenueCat grant, written only by the server-side purchase verification and the RevenueCat webhook. Both grants are resolved together at read time (furthest valid expiry wins), so neither can overwrite the other.",
   "properties": {
     "plan": {
       "type": "string",
@@ -42,6 +42,50 @@
     "demo_mastery": {
       "type": "number",
       "description": "Display-only demo mastery override (0-100). Written only by the admin-only adminDemoMode function while demo mode is active; the app renders it as the mastery shown across study views without changing any stored concept mastery. Absent when no override is set."
+    },
+    "rc_plan": {
+      "type": "string",
+      "enum": [
+        "free",
+        "pro",
+        "elite"
+      ],
+      "default": "free",
+      "description": "RevenueCat grant tier, mapped from the RevenueCat entitlement id (pro \u2192 pro, elite \u2192 elite). Never taken from a webhook payload plan field; free/expired means no RevenueCat grant."
+    },
+    "rc_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "trialing",
+        "expired"
+      ],
+      "default": "expired",
+      "description": "RevenueCat grant state. 'active' covers a subscription whose access continues until rc_expires_at (including auto-renew turned off, a billing problem, or a scheduled pause); 'expired' means access has ended (expiration, refund, or a terminal event)."
+    },
+    "rc_expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RevenueCat's own expiration timestamp for the grant. Drives grant validity \u2014 a grant whose expiry has passed is not valid."
+    },
+    "rc_product_id": {
+      "type": "string",
+      "default": ""
+    },
+    "rc_app_user_id": {
+      "type": "string",
+      "default": "",
+      "description": "RevenueCat app user id this grant belongs to. StudyOS uses the learner's server-side user id, so webhook and verification always resolve the same learner."
+    },
+    "rc_last_event_id": {
+      "type": "string",
+      "default": "",
+      "description": "RevenueCat webhook event id last applied. Duplicate events with this id are ignored."
+    },
+    "rc_last_event_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the last applied RevenueCat webhook event. Older events are ignored so a delayed or replayed webhook cannot roll the grant backwards."
     }
   },
   "required": [

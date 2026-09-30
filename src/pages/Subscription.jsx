@@ -5,6 +5,9 @@ import { base44 } from "@/api/base44Client";
 import { useStudyOSData } from "@/hooks/useStudyOSData";
 import { useEntitlement } from "@/hooks/useEntitlement";
 import StudyPanel from "@/components/StudyPanel";
+import PlanPurchaseButton from "@/components/subscription/PlanPurchaseButton";
+import { useRevenueCatOffering } from "@/hooks/useRevenueCatOffering";
+import { usePurchaseReconcile } from "@/hooks/usePurchaseReconcile";
 import {
   Loader2, CreditCard, Sparkles, Check, Zap, Crown, Timer,
   ScanLine, Headphones, BrainCircuit, FileCheck2, Target, LockKeyhole, KeyRound
@@ -75,7 +78,7 @@ function formatCountdown(ms) {
 export default function Subscription() {
   const { user } = useAuth();
   const { profile, loading } = useStudyOSData();
-  const { entitlement, loading: entLoading, isDemoModeActive } = useEntitlement();
+  const { entitlement, loading: entLoading, isDemoModeActive, refresh } = useEntitlement();
   const [now, setNow] = useState(Date.now());
   const [accessCode, setAccessCode] = useState("");
   const [redeemingCode, setRedeemingCode] = useState(false);
@@ -104,6 +107,13 @@ export default function Subscription() {
     [premiumResetAt, now]
   );
 
+  // The purchase configuration arrives with the same server entitlement read
+  // every credit surface uses. While RevenueCat is unconfigured nothing is
+  // fetched and the page keeps its existing non-purchase state.
+  const purchaseConfig = entitlement?.purchase || null;
+  const offering = useRevenueCatOffering(purchaseConfig, user?.id, purchaseConfig?.entitlement_map);
+  usePurchaseReconcile(entitlement, refresh);
+
   if (loading || entLoading) {
     return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
@@ -126,7 +136,7 @@ export default function Subscription() {
       const res = await base44.functions.invoke("adminDemoMode", { action: "activate", code });
       setDemoMessage(res?.data?.message || "Shipathon Demo Mode activated.");
       setDemoCode("");
-      await entitlement.refresh();
+      await refresh();
     } catch (error) {
       setDemoError(error?.response?.data?.error || error?.data?.error || "Could not activate Demo Mode.");
     } finally {
@@ -141,7 +151,7 @@ export default function Subscription() {
     try {
       const res = await base44.functions.invoke("adminDemoMode", { action: "deactivate" });
       setDemoMessage(res?.data?.message || "Demo mode disabled.");
-      await entitlement.refresh();
+      await refresh();
     } catch (error) {
       setDemoError(error?.response?.data?.error || error?.data?.error || "Could not disable Demo Mode.");
     } finally {
@@ -164,7 +174,7 @@ export default function Subscription() {
       const res = await base44.functions.invoke("redeemStudyOSCode", { code });
       setCodeMessage(res?.data?.message || "Paid access activated.");
       setAccessCode("");
-      await entitlement.refresh();
+      await refresh();
     } catch (error) {
       setCodeError(
         error?.response?.data?.error ||
@@ -246,8 +256,8 @@ export default function Subscription() {
               </div>
 
               <div className="mb-2">
-                <span className="text-2xl font-bold text-foreground">{p.price}</span>
-                <span className="text-[12px] text-muted-foreground">{p.period}</span>
+                <span className="text-2xl font-bold text-foreground">{offering.prices?.[p.id]?.price || p.price}</span>
+                <span className="text-[12px] text-muted-foreground">{offering.prices?.[p.id]?.period || p.period}</span>
               </div>
               <p className="text-[12px] leading-5 text-muted-foreground mb-5">{p.description}</p>
 
@@ -259,13 +269,14 @@ export default function Subscription() {
                 ))}
               </ul>
 
-              <button
-                disabled
-                title="Payments are not enabled yet"
-                className={`w-full rounded-lg text-sm font-semibold px-4 py-2.5 disabled:opacity-50 ${p.highlight ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
-              >
-                {isCurrent ? "Current plan" : "Coming with payments"}
-              </button>
+              <PlanPurchaseButton
+                plan={p}
+                entitlement={entitlement}
+                appUserId={user?.id}
+                rcPackage={offering.packages?.[p.id] || null}
+                isCurrent={isCurrent}
+                onVerified={refresh}
+              />
             </StudyPanel>
           );
         })}
@@ -390,7 +401,7 @@ export default function Subscription() {
       )}
 
       <p className="text-[11px] text-muted-foreground mt-5 px-1">
-        Launch pricing is staged for the current entitlement prototype. Payments remain disabled until a verified RevenueCat purchase path is connected, so the app cannot accidentally grant or charge for a plan from this page.
+        A plan can only be activated from a server-verified source: a redeemed access code, or a RevenueCat purchase the server confirms with RevenueCat before recording it. This page cannot grant a plan by itself.
       </p>
     </div>
   );

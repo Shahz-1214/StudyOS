@@ -40,12 +40,89 @@ function validPlan(value: string): value is StudyOSPlan {
   return value === "free" || value === "pro" || value === "elite";
 }
 
+// Display names live in one place so the access-code path and the RevenueCat
+// path can never show two names for the same tier.
+export const PLAN_DISPLAY_NAMES: Record<StudyOSPlan, string> = {
+  free: "Free",
+  pro: "Plus",
+  elite: "Pro",
+};
+
+const PLAN_RANK: Record<StudyOSPlan, number> = { free: 0, pro: 1, elite: 2 };
+
+// A grant with no usable expiry is treated as open-ended. An unparseable value
+// is treated the same way it always has been (not expired).
+function expiryMs(value: any): number {
+  if (!value) return Number.POSITIVE_INFINITY;
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : Number.POSITIVE_INFINITY;
+}
+
+type EntitlementGrant = { plan: StudyOSPlan; expiresAt: number };
+
+/**
+ * The base grant — the plan/status/expires_at fields written by access-code
+ * redemption. Semantics unchanged: active or trialing, unexpired, and a paid
+ * tier. Free is the absence of a grant, not a grant.
+ */
+function baseGrant(sub: any, now: number): EntitlementGrant | null {
+  if (!sub || !validPlan(sub.plan) || sub.plan === "free") return null;
+  if (!["active", "trialing"].includes(sub.status || "active")) return null;
+  if (expiryMs(sub.expires_at) <= now) return null;
+  if (sub.status === "trialing" && expiryMs(sub.trial_ends_at) <= now) return null;
+  return { plan: sub.plan, expiresAt: expiryMs(sub.expires_at) };
+}
+
+/**
+ * The RevenueCat grant — the rc_* fields, written only by the server-side
+ * purchase verification and the RevenueCat webhook. Valid while its status is
+ * active or trialing and its own expiry has not passed.
+ */
+function revenueCatGrant(sub: any, now: number): EntitlementGrant | null {
+  if (!sub || !validPlan(sub.rc_plan) || sub.rc_plan === "free") return null;
+  if (!["active", "trialing"].includes(sub.rc_status || "")) return null;
+  if (expiryMs(sub.rc_expires_at) <= now) return null;
+  return { plan: sub.rc_plan, expiresAt: expiryMs(sub.rc_expires_at) };
+}
+
+/**
+ * Deterministic entitlement resolution — no AI, no guessing. Both grants on the
+ * record are evaluated independently: the valid grant with the furthest expiry
+ * wins, ties go to the higher tier, and no valid grant means free. A lapsed
+ * RevenueCat subscription therefore never downgrades a learner who still holds
+ * a valid access-code grant, and a lapsed access code never cancels a paid
+ * subscription.
+ */
+export function resolveEntitlement(sub: any, now = Date.now()): {
+  plan: StudyOSPlan;
+  source: "access_code" | "revenuecat" | "none";
+  expires_at: string | null;
+} {
+  const candidates: Array<{ source: "access_code" | "revenuecat"; grant: EntitlementGrant }> = [];
+  const base = baseGrant(sub, now);
+  if (base) candidates.push({ source: "access_code", grant: base });
+  const rc = revenueCatGrant(sub, now);
+  if (rc) candidates.push({ source: "revenuecat", grant: rc });
+
+  if (!candidates.length) return { plan: "free", source: "none", expires_at: null };
+
+  candidates.sort((a, b) => {
+    if (b.grant.expiresAt !== a.grant.expiresAt) return b.grant.expiresAt - a.grant.expiresAt;
+    return PLAN_RANK[b.grant.plan] - PLAN_RANK[a.grant.plan];
+  });
+
+  const winner = candidates[0];
+  return {
+    plan: winner.grant.plan,
+    source: winner.source,
+    expires_at: Number.isFinite(winner.grant.expiresAt)
+      ? new Date(winner.grant.expiresAt).toISOString()
+      : null,
+  };
+}
+
 export function resolveEffectivePlan(sub: any, now = Date.now()): StudyOSPlan {
-  if (!sub || !validPlan(sub.plan)) return "free";
-  if (!["active", "trialing"].includes(sub.status || "active")) return "free";
-  if (sub.expires_at && Number.isFinite(new Date(sub.expires_at).getTime()) && new Date(sub.expires_at).getTime() <= now) return "free";
-  if (sub.trial_ends_at && sub.status === "trialing" && Number.isFinite(new Date(sub.trial_ends_at).getTime()) && new Date(sub.trial_ends_at).getTime() <= now) return "free";
-  return sub.plan;
+  return resolveEntitlement(sub, now).plan;
 }
 
 // ---------------------------------------------------------------------------
