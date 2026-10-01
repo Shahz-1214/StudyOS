@@ -76,7 +76,7 @@ NATIVE_HANDOFF.md       Native Android/Galaxy integration notes
 ### Setup
 
 ```bash
-git clone <REPOSITORY_URL>
+git clone https://github.com/Shahz-1214/Studyos.git
 cd Studyos
 
 npm install
