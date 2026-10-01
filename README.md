@@ -1,69 +1,129 @@
-# Base44 Project
+# StudyOS
 
-Use this repository to run and edit the app locally, then publish changes back through Base44.
+**StudyOS** is a connected AI study workspace that brings understanding, practice, exam preparation, resources, and planning into one student workflow.
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+Instead of switching between separate websites and tools, students can use StudyOS to work through difficult questions, turn notes into quizzes, process lectures, improve essays, prepare for exams, review past papers and textbooks, identify weak concepts, and organize what to study next.
 
-## Prerequisites
+## Why StudyOS exists
 
-1. Clone the repository using the project's Git URL.
-2. Navigate to the project directory.
-3. Install dependencies: `npm install`.
-4. Install the Base44 CLI: `npm install -g base44@latest`.
-5. Install [Deno](https://docs.deno.com/runtime/getting_started/installation/) — the local Base44 backend runs on it.
+StudyOS was created around a practical student problem: useful school and board-exam resources are often scattered, difficult to find, restricted by paywalls or geography, or separated across different platforms. The product aims to reduce that resource-hunting overhead and give students one connected place to learn.
 
-Run `base44 --help` (or see the [CLI reference](https://docs.base44.com/developers/references/cli/commands/introduction)) for the full command surface.
+## Core features
 
-## Run Locally
+- **StudyLens** — guided understanding of difficult questions, including extraction, reasoning, and hints.
+- **Homework Coach** — step-by-step help that guides students without simply replacing the work.
+- **Note → Quiz** — turns study notes into interactive practice.
+- **LectureMind** — processes lecture material into searchable study resources, summaries, flashcards, concepts, and Q&A.
+- **EssayCheck** — rubric-based feedback on writing quality, structure, argument, grammar, and readability.
+- **ExamPilot** — exam information, planning, adaptive practice, and past-paper preparation.
+- **Weakness AI** — surfaces concepts that need more attention using learner performance data.
+- **Tasks / StudySync / FocusStudy** — connect daily study actions and focus sessions to the larger plan.
+- **Resources** — board-specific textbooks, past papers, exam dates, subjects, and other study material.
+- **Mastery tracking** — shared learner state connects learning activity, practice results, weaknesses, and planning.
 
-Three commands, from the project root:
+## Tech stack
 
-```bash
-base44 login   # one-time per machine
-base44 link    # one-time per clone
-base44 dev     # local backend + frontend together
+- React + Vite + JavaScript
+- Base44 backend, entities, authentication, storage, and server functions
+- RevenueCat Web SDK for the purchase flow
+- TanStack Query
+- Tailwind CSS
+- Framer Motion
+- Recharts
+- React Router
+- Cloudflare Turnstile
+- Cloudmersive media-security scanning
+- GitHub for version control and synchronization
+
+## Architecture
+
+The application is designed as one connected learner-state system rather than a collection of unrelated AI pages:
+
+```
+INPUT
+  ↓
+UNDERSTAND → TEACH → PRACTICE → MEASURE
+  ↓
+IDENTIFY WEAKNESS → ADAPT PLAN → STUDY → REASSESS → PROGRESS
 ```
 
-Open the frontend URL that `base44 dev` prints (typically `http://localhost:5173`).
+Business-critical calculations such as scoring, mastery updates, scheduling, and validation are kept deterministic. AI capabilities are isolated behind server-side functions, and user-owned data uses row-level security.
 
-Notes:
+The `base44/` directory contains the exported backend configuration, entities, shared services, and server functions. The `src/` directory contains the React application.
 
-- **Every fresh clone needs `base44 link`.** It writes `base44/.app.jsonc` (the app-id pointer), which is deliberately gitignored. Your app id is in the Builder URL (`app.base44.com/apps/<id>/...`); `base44 link --help` shows the non-interactive flags.
-- **`base44 dev` runs the frontend for you** (via `site.serveCommand` in this repo's `base44/config.jsonc`) — never run `npm run dev` yourself: alone it serves a UI with no backend behind it (`[base44] Proxy not enabled`, every `/api` call fails), and alongside `base44 dev` the second Vite silently takes the next port and you end up looking at the wrong one.
-- **The app must be published at least once for the UI to load under `base44 dev`.** The frontend boots by fetching app settings from the hosted app; before the first publish that fails and every page redirects to login. The local API works regardless.
-- Entities, functions, and auth run locally — entity data is **in-memory only**, wiped when `base44 dev` restarts. Everything else (Core integrations, OAuth login) is forwarded to your deployed app. Full breakdown: [Local development overview](https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview).
+## Repository structure
 
-## Frontend Only, Hosted Backend
+```
+src/                    React UI, pages, components, shared client logic
+base44/entities/        Base44 data models
+base44/functions/       Server-side application functions
+base44/shared/          Shared server utilities, security, subscriptions, learner logic
+scripts/                Local validation and security checks
+ARCHITECTURE.md         Detailed system architecture
+REVENUECAT_SETUP.md     RevenueCat purchase configuration and verification
+NATIVE_HANDOFF.md       Native Android/Galaxy integration notes
+```
 
-To work on just the frontend against your app's live hosted backend:
+## Run locally
+
+### Prerequisites
+
+- Node.js
+- npm
+- Base44 CLI
+- Deno
+
+### Setup
+
+```bash
+git clone <REPOSITORY_URL>
+cd Studyos
+
+npm install
+npm install -g base44@latest
+
+base44 login
+base44 link
+base44 dev
+```
+
+Open the URL printed by `base44 dev`.
+
+For frontend work against the hosted Base44 backend:
 
 ```bash
 base44 dev --remote
 ```
 
-⚠️ In this mode writes go to your app's **production data** — plain `base44 dev` keeps everything local.
+Do not commit secrets. Environment files such as `.env` are excluded by `.gitignore`.
 
-## Publish Your Changes
+## Validation
 
-After pushing your changes to git, open the Base44 dashboard and publish the app:
+The repository includes these checks:
 
 ```bash
-base44 dashboard open
+npm run lint
+npm run typecheck
+npm run build
+npm run security:scan
 ```
 
-This repo syncs to Base44 through git, so publish from the dashboard rather than `base44 deploy` — a CLI deploy ships your local tree directly, bypassing the sync, and the deployed state silently diverges from the repo.
+The current exported code passes all four checks. The security scan checks application source for common private-key, cloud-token, public-secret, and logging patterns.
 
-## Docs & Support
+## RevenueCat
 
-GitHub integration: [https://docs.base44.com/developers/app-code/local-development/github](https://docs.base44.com/developers/app-code/local-development/github)
+StudyOS includes a RevenueCat-powered web purchase flow and server-side verification. Configuration details, entitlements, webhook setup, test-store instructions, and the end-to-end verification flow are documented in [REVENUECAT_SETUP.md](./REVENUECAT_SETUP.md).
 
-Local development: [https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview](https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview)
+The Next Gen submission is evaluated from the demo video and public source repository; no app-store release is required for this category.
 
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+## Important security notes
 
-## Payments (RevenueCat)
+- Secrets belong in Base44 secrets / environment configuration, never in source control.
+- User-owned records are protected with row-level security.
+- AI operations are server-side and validated before persistence.
+- Uploaded media passes through the application's security/scanning flow before AI processing.
+- Demo Mode is restricted to authorized admin access and exists for controlled presentation/QA.
 
-The subscription purchase path is set up and documented in
-[REVENUECAT_SETUP.md](./REVENUECAT_SETUP.md): the RevenueCat project, entitlements and
-offering, the required app secrets, the webhook endpoint and how to verify a purchase
-end to end.
+## License
+
+StudyOS is released under the MIT License. See [LICENSE](./LICENSE).
