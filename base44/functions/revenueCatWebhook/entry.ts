@@ -20,7 +20,7 @@ function json(data: any, status = 200) {
  * endpoint, so nothing is processed before that check passes.
  *
  * Writes ONLY the rc_* grant fields on the matching learner's record. The base
- * grant (plan/status/expires_at) belongs to access-code redemption and is never.
+ * grant (plan/status/expires_at) belongs to access-code redemption and is never
  * touched here. The plan tier comes only from the mapped entitlement id — never
  * from a plan value in the payload.
  */
