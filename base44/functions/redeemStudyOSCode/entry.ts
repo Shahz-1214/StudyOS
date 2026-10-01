@@ -7,7 +7,7 @@ async function sha256Hex(value: string) {
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Only hashes live in backend source; plaintext access codes are never shipped to the client.p
+// Only hashes live in backend source; plaintext access codes are never shipped to the client.
 const CODE_DEFINITIONS: Record<string, { plan: 'pro' | 'elite'; duration: number; hint: string }> = {"3a9a176063203f78f6e8b3dce84a5a8267b8310be0e6f204dc5fb8d11b095224":{"plan":"elite","duration":30,"hint":"AE5"},"fdccf5c3cd9b820574f0e1e73970bb6fdb7efc4d14401de6f4aa84624349f6ef":{"plan":"elite","duration":30,"hint":"4D1"},"d151626ba69e33c5db73cecb5e5ac30eab6efd3b5ad2b6b9134f7c257e17cd5f":{"plan":"elite","duration":30,"hint":"6E3"},"418ca09befef7b824ca88b5bdf06c9ae6595abebc6032529690c6bf7a07968ce":{"plan":"elite","duration":30,"hint":"1B4"},"c07f89d333df0aa29e6a60d7579649c6c8d8340e851e88ae36fbec5efc543408":{"plan":"elite","duration":30,"hint":"9E3"},"72693dfe5fc04f603627ee59c515d6b98f0d6aa9b378695667a4c8a7c1b79115":{"plan":"elite","duration":30,"hint":"719"},"aa14d5bac1ec964db29937ce41249ff86a40851d95da0dd195a36fe55e716b9c":{"plan":"elite","duration":30,"hint":"FDF"},"425f697eec5bb3b0736173cf9ba1ed8bc483a557a502a6052e1e612cb52b77c8":{"plan":"elite","duration":30,"hint":"705"},"60f8ad8a9866673581b263dba36be94bf18be9f992bbfa6560e7255c0f0baaab":{"plan":"elite","duration":30,"hint":"77D"},"3d2d8817d2d50bfd80f48bf5fa2f3627f1aa8f3470c680ba5ff92d1dee2d7ead":{"plan":"elite","duration":30,"hint":"F48"}};
 
 function json(data: any, status = 200) {
