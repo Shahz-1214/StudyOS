@@ -6,12 +6,18 @@
 // records status 'approved' for the authenticated owner: content-based type
 // detection, size/structure limits, archive and active-content rejection, a
 // real malware scan (Cloudmersive Virus Scan API; the gate FAILS CLOSED if the
-// scanner is unavailable), and
-// a safe derivative. Filenames, extensions, and declared MIME types are never
-// trusted for classification — the bytes are.
+// scanner is unavailable or refuses the file), and
+// a safe derivative. An AUDIO recording above the scanner's own file limit is
+// the single exception: it is released only after every other gate, and its
+// verdict is recorded truthfully as not scanned. Filenames, extensions, and
+// declared MIME types are never trusted for classification — the bytes are.
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-export const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
+// Audio ceiling is 10 MB. Cloudmersive's own file limit is lower (3,500,000
+// bytes, measured against the live API), so audio above that limit is released
+// only after the deterministic gates and is labelled as not scanned by the
+// security gate — see scanUploadedMedia.
+export const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
 
 const IMAGE_EXT = [".jpg", ".jpeg", ".png", ".webp"];
 const AUDIO_EXT = [".mp3", ".wav", ".m4a", ".ogg", ".oga", ".webm", ".mp4", ".mpeg", ".mpga", ".flac"];

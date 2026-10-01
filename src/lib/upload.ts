@@ -13,9 +13,12 @@ const AUDIO_TYPES = [
   "audio/webm", "audio/flac", "audio/x-flac",
 ];
 
-// Launch-time scanner ceiling for Cloudmersive Free. The server enforces the
-// same ceiling independently; this client check only avoids uploading files
-// that the scanner will inevitably reject.
+// Recordings are allowed up to 10 MB (the server enforces the same cap).
+const AUDIO_MAX_BYTES = 10 * 1024 * 1024;
+
+// Cloudmersive's own file limit (measured against the live API). The server
+// enforces it independently and releases audio above it as not scanned; this
+// client check only avoids uploading files the scanner will inevitably refuse.
 const CLOUDMERSIVE_MAX_BYTES = 3_500_000;
 
 // Demo Mode drops the size limits (the 3.5 MB scanner ceiling and the per-kind
@@ -24,7 +27,7 @@ const CLOUDMERSIVE_MAX_BYTES = 3_500_000;
 // confusing failure later.
 export function validateClientFile(kind: "image" | "audio", file: File, demoMode = false) {
   const allow = kind === "image" ? IMAGE_TYPES : AUDIO_TYPES;
-  const max = kind === "image" ? 10 * 1024 * 1024 : 25 * 1024 * 1024;
+  const max = kind === "image" ? 10 * 1024 * 1024 : AUDIO_MAX_BYTES;
   if (!allow.includes(file.type)) {
     return { ok: false as const, error: `Unsupported file type. Allowed: ${kind === "image" ? "JPG, PNG, WEBP" : "MP3, WAV, M4A, OGG, FLAC"}.` };
   }
@@ -32,8 +35,11 @@ export function validateClientFile(kind: "image" | "audio", file: File, demoMode
   if (file.size > max) {
     return { ok: false as const, error: `File too large. Max ${Math.round(max / 1024 / 1024)}MB.` };
   }
-  if (file.size > CLOUDMERSIVE_MAX_BYTES) {
-    return { ok: false as const, error: "This file is too large for the current security scanner. Please upload a file smaller than 3.5 MB." };
+  // The scanner ceiling only limits what can be malware-scanned. Audio above it
+  // is still accepted (the server records it as not scanned); images above it
+  // are refused, because the scanner must be able to check them.
+  if (kind === "image" && file.size > CLOUDMERSIVE_MAX_BYTES) {
+    return { ok: false as const, error: "This image is too large for the current security scanner. Please upload an image smaller than 3.5 MB." };
   }
   return { ok: true as const };
 }

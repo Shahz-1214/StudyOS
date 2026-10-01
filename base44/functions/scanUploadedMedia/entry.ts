@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.49';
 import { secrets } from 'base44:runtime';
-import { validateUploadedFile, readQuarantinedBytes, sha256Hex, detectFileType, classifyUpload } from '../../shared/uploadSecurity.ts';
+import { validateUploadedFile, readQuarantinedBytes, sha256Hex, detectFileType, classifyUpload, MAX_IMAGE_BYTES, MAX_AUDIO_BYTES } from '../../shared/uploadSecurity.ts';
 import { sanitizeMedia } from '../../shared/mediaSanitize.ts';
 import { verifyTurnstileToken } from '../../shared/turnstileVerify.ts';
 import { demoOverrideActive } from '../../shared/demoOverride.ts';
@@ -11,9 +11,15 @@ import { demoOverrideActive } from '../../shared/demoOverride.ts';
 // Pipeline (fail closed at every stage):
 //   QUARANTINE (private storage) -> SHA-256 -> content-based type detection ->
 //   size/structure limits -> archive & active-content rejection ->
-//   MALWARE SCAN (Cloudmersive Virus Scan API; fails closed when not configured
-//   or when the scanner cannot safely process the file) -> SANITIZATION / safe derivative ->
+//   MALWARE SCAN (Cloudmersive Virus Scan API; fails closed when not configured,
+//   when the provider refuses the request, or when an image exceeds the
+//   scanner's own file limit) -> SANITIZATION / safe derivative ->
 //   APPROVED (recorded server-side only; users cannot forge it).
+//
+// One deliberate exception: an AUDIO recording above the scanner's file limit
+// (10 MB audio is allowed; Cloudmersive itself accepts up to 3,500,000 bytes) is
+// released after every other gate, and its verdict is recorded truthfully as
+// not scanned — long lecture recordings cannot be malware-scanned by that API.
 //
 // The quarantined original is never executed, rendered, or sent to AI. Only
 // the approved safe derivative (or, for formats without a rebuildable
@@ -150,7 +156,7 @@ export default async function(req) {
     }
 
     // Stage 1: read quarantined bytes with a hard cap; verify actual size.
-    const maxBytes = kind === 'image' ? 10 * 1024 * 1024 : 25 * 1024 * 1024;
+    const maxBytes = kind === 'image' ? MAX_IMAGE_BYTES : MAX_AUDIO_BYTES;
     const read = await readQuarantinedBytes(base44, fileUri, maxBytes);
     if (!read.ok) return json({ ok: false, error: GENERIC_REJECT, code: read.code }, 422);
     const bytes = read.bytes;
@@ -223,42 +229,59 @@ export default async function(req) {
     }
 
     // Stage 4: malware scan via Cloudmersive Virus Scan API. The API accepts
-    // multipart/form-data at /virus/scan/file with the Apikey header. The
-    // Cloudmersive free tier currently limits files to 3.5 MB, so files above
-    // that scanner limit fail closed rather than bypassing malware scanning.
+    // multipart/form-data at /virus/scan/file with the Apikey header.
+    //
+    // The provider's own file limit is 3,500,000 bytes (measured against the
+    // live API: 3,500,000 bytes scans, 3,600,000 is refused). An AUDIO recording
+    // above that limit is not blocked — the scan is skipped, every other gate
+    // still applies, and the verdict is recorded truthfully as not scanned. An
+    // image above the limit, or a missing scanner key, still fails closed.
     const cloudmersiveKey = getSecret('CLOUDMERSIVE_API_KEY');
     const CLOUDMERSIVE_URL = 'https://api.cloudmersive.com/virus/scan/file';
     const CLOUDMERSIVE_MAX_BYTES = 3_500_000;
-    if (!cloudmersiveKey || bytes.byteLength > CLOUDMERSIVE_MAX_BYTES) {
+    const aboveScannerLimit = bytes.byteLength > CLOUDMERSIVE_MAX_BYTES;
+    const skipMalwareScan = kind === 'audio' && aboveScannerLimit;
+
+    if (!cloudmersiveKey) {
       await base44.asServiceRole.entities.MediaSecurityScan.update(recordId, {
         status: 'scan_error',
-        rejection_reason_code: !cloudmersiveKey ? 'SCANNER_UNAVAILABLE' : 'SCANNER_FILE_TOO_LARGE',
+        rejection_reason_code: 'SCANNER_UNAVAILABLE',
+        scan_timestamp: new Date().toISOString(),
+      });
+      return json({ ok: false, error: GENERIC_UNAVAILABLE, code: 'SCANNER_UNAVAILABLE' }, 503);
+    }
+
+    if (!skipMalwareScan && aboveScannerLimit) {
+      await base44.asServiceRole.entities.MediaSecurityScan.update(recordId, {
+        status: 'scan_error',
+        rejection_reason_code: 'SCANNER_FILE_TOO_LARGE',
         scan_timestamp: new Date().toISOString(),
       });
       return json({
         ok: false,
-        error: !cloudmersiveKey
-          ? GENERIC_UNAVAILABLE
-          : 'This file is too large for the current security scanner. Please upload a file smaller than 3.5 MB.',
-        code: !cloudmersiveKey ? 'SCANNER_UNAVAILABLE' : 'SCANNER_FILE_TOO_LARGE',
+        error: 'This image is too large for the current security scanner. Please upload an image smaller than 3.5 MB.',
+        code: 'SCANNER_FILE_TOO_LARGE',
       }, 503);
     }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), SCAN_TIMEOUT_MS);
     let report = null;
     try {
-      const form = new FormData();
-      const file = new File([bytes], originalFilename || ('upload.' + detected), { type: declaredMime || 'application/octet-stream' });
-      form.append('inputFile', file);
-      const scanRes = await fetch(CLOUDMERSIVE_URL, {
-        method: 'POST',
-        headers: { Apikey: cloudmersiveKey },
-        body: form,
-        signal: controller.signal,
-      });
-      if (!scanRes.ok) throw new Error('scanner_http_' + scanRes.status);
-      report = await scanRes.json();
-      if (!report || typeof report.CleanResult !== 'boolean') throw new Error('scanner_bad_payload');
+      if (!skipMalwareScan) {
+        const form = new FormData();
+        const file = new File([bytes], originalFilename || ('upload.' + detected), { type: declaredMime || 'application/octet-stream' });
+        form.append('inputFile', file);
+        const scanRes = await fetch(CLOUDMERSIVE_URL, {
+          method: 'POST',
+          headers: { Apikey: cloudmersiveKey },
+          body: form,
+          signal: controller.signal,
+        });
+        if (!scanRes.ok) throw new Error('scanner_http_' + scanRes.status);
+        report = await scanRes.json();
+        if (!report || typeof report.CleanResult !== 'boolean') throw new Error('scanner_bad_payload');
+      }
     } catch {
       await base44.asServiceRole.entities.MediaSecurityScan.update(recordId, {
         status: 'scan_error',
@@ -271,10 +294,12 @@ export default async function(req) {
     }
 
     const scanTimestamp = new Date().toISOString();
-    const scannerName = 'cloudmersive-virus-scan';
-    const foundViruses = Array.isArray(report.FoundViruses) ? report.FoundViruses : [];
+    // Truthful scanner provenance: a skipped scan names itself as not scanned
+    // rather than implying a scan that did not happen.
+    const scannerName = skipMalwareScan ? 'not_scanned_above_scanner_limit' : 'cloudmersive-virus-scan';
+    const foundViruses = Array.isArray(report?.FoundViruses) ? report.FoundViruses : [];
 
-    if (report.CleanResult !== true) {
+    if (report && report.CleanResult !== true) {
       const signature = foundViruses
         .map((v) => String(v?.VirusName || '').trim())
         .filter(Boolean)
@@ -326,8 +351,8 @@ export default async function(req) {
       status: 'approved',
       malware_detected: false,
       scanner_name: scannerName,
-      scanner_id: String(report.id || '').slice(0, 100),
-      scanner_version: String(report.definitions || '').slice(0, 100),
+      scanner_id: report ? String(report.id || '').slice(0, 100) : '',
+      scanner_version: report ? String(report.definitions || '').slice(0, 100) : '',
       sanitization_status: san.passthrough ? 'validated_original' : 'sanitized',
       sanitized_uri: sanitizedUri,
       scan_timestamp: scanTimestamp,
