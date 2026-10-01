@@ -116,14 +116,6 @@ StudyOS includes a RevenueCat-powered web purchase flow and server-side verifica
 
 The Next Gen submission is evaluated from the demo video and public source repository; no app-store release is required for this category.
 
-## Important security notes
-
-- Secrets belong in Base44 secrets / environment configuration, never in source control.
-- User-owned records are protected with row-level security.
-- AI operations are server-side and validated before persistence.
-- Uploaded media passes through the application's security/scanning flow before AI processing.
-- Demo Mode is restricted to authorized admin access and exists for controlled presentation/QA.
-
 ## License
 
 StudyOS is released under the MIT License. See [LICENSE](./LICENSE).
