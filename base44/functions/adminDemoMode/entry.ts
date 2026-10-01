@@ -50,7 +50,7 @@ export default async function(req) {
     //
     // It stores ONE number on the caller's own server-managed SubscriptionState
     // record. It never touches learner records: while Demo Mode is active the app
-    // renders that number as the mastery shown in its study views, stored concept
+    // renders that number as the mastery shown in its study views, stored concept.
     // mastery stays exactly as it is, and the override ends when Demo Mode is
     // turned off.
     if (action === "set_mastery") {
