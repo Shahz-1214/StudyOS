@@ -189,7 +189,7 @@ export default function Subscription() {
   return (
     <div className="max-w-[1040px] mx-auto px-5 md:px-8 py-6 md:py-8">
       <div className="mb-6">
-        <div className="eyebrow">Stage 6 · Entitlements</div>
+        <div className="eyebrow">Plans &amp; credits</div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mt-1 flex items-center gap-2">
           <CreditCard className="w-6 h-6 text-primary" /> Subscription
         </h1>
@@ -256,8 +256,24 @@ export default function Subscription() {
               </div>
 
               <div className="mb-2">
-                <span className="text-2xl font-bold text-foreground">{offering.prices?.[p.id]?.price || p.price}</span>
-                <span className="text-[12px] text-muted-foreground">{offering.prices?.[p.id]?.period || p.period}</span>
+                {offering.prices?.[p.id]?.price ? (
+                  <>
+                    <span className="text-2xl font-bold text-foreground">{offering.prices[p.id].price}</span>
+                    <span className="text-[12px] text-muted-foreground">{offering.prices[p.id].period}</span>
+                  </>
+                ) : p.id === "free" ? (
+                  <>
+                    <span className="text-2xl font-bold text-foreground">{p.price}</span>
+                    <span className="text-[12px] text-muted-foreground">{p.period}</span>
+                  </>
+                ) : (
+                  /* No price is invented: a paid plan with no live offering price
+                     states that plainly instead of showing a number that cannot
+                     be bought. */
+                  <span className="text-[13px] font-semibold text-muted-foreground">
+                    {offering.status === "loading" ? "Loading price…" : "Price shown at checkout"}
+                  </span>
+                )}
               </div>
               <p className="text-[12px] leading-5 text-muted-foreground mb-5">{p.description}</p>
 
