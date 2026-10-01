@@ -1,4 +1,5 @@
 import { isDemoModeActive } from "./subscriptionPlans.ts";
+import { findLearnerSubscription } from "./subscriptionRecord.ts";
 
 // Server-side demo gate for the upload-security path.
 //
@@ -20,8 +21,8 @@ export async function demoOverrideActive(base44: any, now = Date.now()): Promise
   try {
     const user = await base44.auth.me();
     if (user?.role !== "admin") return false;
-    const subs = await base44.entities.SubscriptionState.list("-created_date", 1);
-    return isDemoModeActive(subs?.[0], now);
+    const sub = await findLearnerSubscription(base44, user.id);
+    return isDemoModeActive(sub, now);
   } catch {
     return false;
   }

@@ -1,8 +1,13 @@
 {
   "name": "SubscriptionState",
   "type": "object",
-  "description": "Server-managed entitlement record. Demo mode is an internal admin-only presentation entitlement and is never user-writable. The plan/status/expires_at/trial_ends_at fields are the base grant written by access-code redemption; the rc_* fields are the separate RevenueCat grant, written only by the server-side purchase verification and the RevenueCat webhook. Both grants are resolved together at read time (furthest valid expiry wins), so neither can overwrite the other.",
+  "description": "Server-managed entitlement record, one per learner, addressed by the server-written learner_id. Demo mode is an internal admin-only presentation entitlement and is never user-writable. The plan/status/expires_at/trial_ends_at fields are the base grant written by access-code redemption; the rc_* fields are the separate RevenueCat grant, written only by the server-side purchase verification and the RevenueCat webhook. Both grants are resolved together at read time (furthest valid expiry wins), so neither can overwrite the other.",
   "properties": {
+    "learner_id": {
+      "type": "string",
+      "default": "",
+      "description": "Server-written learner key: the app user id of the learner this record belongs to. Backend code writes it, because a service-role create records the service identity as the record owner rather than the learner; entitlement resolution and every activation path address the learner by this key. Never client-writable."
+    },
     "plan": {
       "type": "string",
       "enum": [

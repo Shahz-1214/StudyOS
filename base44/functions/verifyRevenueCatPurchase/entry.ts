@@ -6,6 +6,7 @@ import {
   revenueCatGrantFields,
 } from '../../shared/revenueCat.ts';
 import { PLAN_DISPLAY_NAMES } from '../../shared/subscriptionPlans.ts';
+import { findLearnerSubscription, saveLearnerSubscription } from '../../shared/subscriptionRecord.ts';
 
 function json(data: any, status = 200) {
   return Response.json(data, { status });
@@ -73,8 +74,7 @@ export default async function(req) {
       });
     }
 
-    const subs = await base44.entities.SubscriptionState.list('-created_date', 1);
-    const current = subs?.[0];
+    const current = await findLearnerSubscription(base44, user.id);
     const grant = grantFromSubscriber(result.subscriber);
 
     if (!grant) {
@@ -97,16 +97,13 @@ export default async function(req) {
     // are admin-only by design — the learner is authenticated, and only their
     // own record is written.
     const fields = revenueCatGrantFields({ ...grant, app_user_id: appUserId });
-    if (current?.id) {
-      await base44.asServiceRole.entities.SubscriptionState.update(current.id, fields);
-    } else {
-      await base44.asServiceRole.entities.SubscriptionState.create({
-        plan: 'free',
-        status: 'active',
-        created_by_id: appUserId,
-        ...fields,
-      });
-    }
+    // One record per learner: the learner's existing record is updated in place
+    // (stamped with the learner key when it is a legacy record), and a record is
+    // created once, keyed to the learner, only when none exists.
+    await saveLearnerSubscription(base44, appUserId, fields, {
+      plan: 'free',
+      status: 'active',
+    });
 
     await base44.entities.Event.create({
       event_name: 'revenuecat_verified',

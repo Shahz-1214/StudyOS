@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { findLearnerSubscription, saveLearnerSubscription } from '../../shared/subscriptionRecord.ts';
 
 async function sha256Hex(value: string) {
   const bytes = new TextEncoder().encode(value);
@@ -93,8 +94,7 @@ export default async function(req) {
     try {
       const durationDays = Math.max(1, Math.min(365, Number(promo.duration_days || definition.duration || 30)));
       const durationMs = durationDays * 24 * 60 * 60 * 1000;
-      const subscriptions = await base44.entities.SubscriptionState.list('-created_date', 1);
-      const current = subscriptions?.[0];
+      const current = await findLearnerSubscription(base44, user.id);
       const currentExpiry = current?.expires_at ? new Date(current.expires_at).getTime() : 0;
       const safeCurrentExpiry = Number.isFinite(currentExpiry) ? currentExpiry : 0;
       const nextExpiry = new Date(Math.max(Date.now(), safeCurrentExpiry) + durationMs).toISOString();
@@ -107,14 +107,13 @@ export default async function(req) {
         trial_ends_at: null,
       };
 
-      if (current?.id) {
-        await base44.asServiceRole.entities.SubscriptionState.update(current.id, payload);
-      } else {
-        await base44.asServiceRole.entities.SubscriptionState.create({
-          ...payload,
-          created_by_id: user.id,
-        });
-      }
+      // One record per learner: an existing record (learner-keyed, or a legacy
+      // record the learner's account owns) is updated in place and stamped with
+      // the learner key; a record is created only when the learner has none.
+      await saveLearnerSubscription(base44, user.id, payload, {
+        plan: 'free',
+        status: 'active',
+      });
 
       const finalized = await base44.asServiceRole.entities.PromoCode.updateMany(
         { id: promo.id, claim_id: claimId, used_at: null },

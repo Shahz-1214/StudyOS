@@ -6,6 +6,7 @@ import {
   getPremiumPeriodStart,
   getNextPremiumReset,
 } from './subscriptionPlans.ts';
+import { findLearnerSubscription } from './subscriptionRecord.ts';
 
 const RESERVATION_EVENT = "ai_quota_reserved";
 const REFUNDED_EVENT = "ai_quota_refunded";
@@ -33,8 +34,11 @@ function activeReservations(events, nowMs) {
 }
 
 async function loadSubscription(base44, now) {
-  const subs = await base44.entities.SubscriptionState.list("-created_date", 1);
-  const sub = subs[0];
+  // Resolved by the caller's own learner key, so a grant written by any server
+  // path is honoured. A caller that cannot be established resolves to no record
+  // — and therefore to the free limits — rather than to anyone else's plan.
+  const caller = await base44.auth.me().catch(() => null);
+  const sub = caller?.id ? await findLearnerSubscription(base44, caller.id) : null;
   return { sub, plan: resolveEffectivePlan(sub, now) };
 }
 

@@ -5,6 +5,7 @@ import {
   grantStatusForEvent,
   planFromEntitlementIds,
 } from '../../shared/revenueCat.ts';
+import { findLearnerSubscription, saveLearnerSubscription } from '../../shared/subscriptionRecord.ts';
 
 function json(data: any, status = 200) {
   return Response.json(data, { status });
@@ -57,18 +58,9 @@ export default async function(req) {
     const original = String(event.original_app_user_id || '').trim();
     if (original && original !== appUserId) candidates.push(original);
 
-    let current = null;
-    for (const candidate of candidates) {
-      const found = await base44.asServiceRole.entities.SubscriptionState.filter(
-        { created_by_id: candidate },
-        '-created_date',
-        1
-      );
-      if (found?.length) {
-        current = found[0];
-        break;
-      }
-    }
+    // Resolved by the learner key first, then the legacy owner-scoped lookup, so
+    // a record written by any path is found instead of being duplicated.
+    const current = await findLearnerSubscription(base44, candidates);
 
     const eventId = String(event.id || '');
     const eventMs = Number(event.event_timestamp_ms || 0);
@@ -115,17 +107,13 @@ export default async function(req) {
     };
 
     // Service role is required: the entitlement fields are admin-only by design,
-    // and this endpoint has no app-user session to act under.
-    if (current?.id) {
-      await base44.asServiceRole.entities.SubscriptionState.update(current.id, fields);
-    } else {
-      await base44.asServiceRole.entities.SubscriptionState.create({
-        plan: 'free',
-        status: 'active',
-        created_by_id: appUserId,
-        ...fields,
-      });
-    }
+    // and this endpoint has no app-user session to act under. The learner's
+    // single record is updated in place (stamped with their key when it is a
+    // legacy record); no second record is ever created for the same learner.
+    await saveLearnerSubscription(base44, candidates, fields, {
+      plan: 'free',
+      status: 'active',
+    });
 
     // Append-only audit trail in the existing event ledger.
     await base44.asServiceRole.entities.Event.create({

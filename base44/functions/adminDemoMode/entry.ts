@@ -1,5 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.44";
 import { isDemoModeActive } from "../../shared/subscriptionPlans.ts";
+import { findLearnerSubscription, saveLearnerSubscription } from "../../shared/subscriptionRecord.ts";
 
 const DEMO_CODE_HASH = "1c79ffa728981232e50f5d234ef3a7810756f123339907dfcc19d6a3ee79717f";
 
@@ -27,12 +28,7 @@ export default async function(req) {
     const action = String(body?.action || "activate").toLowerCase();
 
     if (action === "deactivate") {
-      const subs = await base44.asServiceRole.entities.SubscriptionState.filter(
-        { created_by_id: user.id },
-        "-created_date",
-        5
-      );
-      const current = subs?.[0];
+      const current = await findLearnerSubscription(base44, user.id);
       if (current?.id) {
         await base44.asServiceRole.entities.SubscriptionState.update(current.id, {
           demo_mode: false,
@@ -58,12 +54,7 @@ export default async function(req) {
     // mastery stays exactly as it is, and the override ends when Demo Mode is
     // turned off.
     if (action === "set_mastery") {
-      const demoSubs = await base44.asServiceRole.entities.SubscriptionState.filter(
-        { created_by_id: user.id },
-        "-created_date",
-        5
-      );
-      const currentSub = demoSubs?.[0];
+      const currentSub = await findLearnerSubscription(base44, user.id);
       if (!isDemoModeActive(currentSub)) {
         return json({ error: "Demo Mode must be active to change the demo mastery.", code: "DEMO_REQUIRED" }, 403);
       }
@@ -89,12 +80,7 @@ export default async function(req) {
     }
 
     const now = new Date().toISOString();
-    const subs = await base44.asServiceRole.entities.SubscriptionState.filter(
-      { created_by_id: user.id },
-      "-created_date",
-      5
-    );
-    const current = subs?.[0];
+    const current = await findLearnerSubscription(base44, user.id);
 
     const payload = {
       plan: current?.plan === "elite" ? "elite" : "elite",
@@ -105,14 +91,12 @@ export default async function(req) {
       demo_activated_at: now,
     };
 
-    if (current?.id) {
-      await base44.asServiceRole.entities.SubscriptionState.update(current.id, payload);
-    } else {
-      await base44.asServiceRole.entities.SubscriptionState.create({
-        ...payload,
-        created_by_id: user.id,
-      });
-    }
+    // One record per learner: the caller's existing record is updated in place
+    // (stamped with their learner key when it is a legacy record).
+    await saveLearnerSubscription(base44, user.id, payload, {
+      plan: "free",
+      status: "active",
+    });
 
     await base44.asServiceRole.entities.DemoModeSession.updateMany(
       { activated_by_id: user.id, active: true },

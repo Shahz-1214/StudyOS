@@ -12,6 +12,7 @@ import {
   PREMIUM_FEATURES,
 } from '../../shared/subscriptionPlans.ts';
 import { REVENUECAT_ENTITLEMENT_PLANS } from '../../shared/revenueCat.ts';
+import { findLearnerSubscription } from '../../shared/subscriptionRecord.ts';
 
 export default async function(req) {
   try {
@@ -21,8 +22,11 @@ export default async function(req) {
 
     // SubscriptionState is server-managed. The absence of a record, a cancelled
     // state, or an expired entitlement always resolves to the free plan.
-    const subs = await base44.entities.SubscriptionState.list("-created_date", 1);
-    const sub = subs[0];
+    // The caller's own record is resolved by their learner key (with a legacy
+    // owner-scoped record as the fallback), so a grant written by a server path
+    // that cannot set record ownership is still found — and only the
+    // authenticated caller's own record is ever read.
+    const sub = await findLearnerSubscription(base44, user.id);
     const now = Date.now();
     // The publishable web key is the ONLY RevenueCat key the browser ever
     // receives. It is delivered as configuration from here rather than
