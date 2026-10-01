@@ -46,7 +46,7 @@ export default async function(req) {
     const limits = demoMode ? DEMO_LIMITS : PLAN_LIMITS[plan];
 
     // Only server quota events count here. Frontend analytics events do not
-    // consume credits and therefore cannot accidentally inflate usage.
+    // consume credits and therefore cannot accidentally inflate usage.Y
     const events = await base44.entities.Event.filter(
       { event_name: { $in: ["ai_request_started", "premium_ai_action"] } },
       "-occurred_at",
