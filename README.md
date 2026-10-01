@@ -4,6 +4,24 @@
 
 Instead of switching between separate websites and tools, students can use StudyOS to work through difficult questions, turn notes into quizzes, process lectures, improve essays, prepare for exams, review past papers and textbooks, identify weak concepts, and organize what to study next.
 
+## Demo
+
+### 2-Minute Next Gen Submission Demo
+
+[![Watch the 2-minute StudyOS demo](https://img.youtube.com/vi/BVnpBmgjB1I/maxresdefault.jpg)](https://youtu.be/BVnpBmgjB1I)
+
+**[Watch the 2-minute demo on YouTube](https://youtu.be/BVnpBmgjB1I)**
+
+This is the concise submission walkthrough covering the core StudyOS workflow.
+
+### Full StudyOS Demo
+
+[![Watch the full StudyOS demo](https://img.youtube.com/vi/zYWQZt1XuTQ/maxresdefault.jpg)](https://youtu.be/zYWQZt1XuTQ)
+
+**[Watch the full demo on YouTube](https://youtu.be/zYWQZt1XuTQ)**
+
+This is the complete product walkthrough with the fuller feature flow.
+
 ## Why StudyOS exists
 
 StudyOS was created around a practical student problem: useful school and board-exam resources are often scattered, difficult to find, restricted by paywalls or geography, or separated across different platforms. The product aims to reduce that resource-hunting overhead and give students one connected place to learn.
