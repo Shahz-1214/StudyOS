@@ -23,7 +23,7 @@ const HOURLY_VERIFY_LIMIT = 30;
  * input — and the entitlement is confirmed by asking RevenueCat directly with
  * the secret API key. Nothing the client claims about a purchase is trusted.
  *
- * Writes ONLY the rc_* grant fields. The base grant (plan/status/expires_at).
+ * Writes ONLY the rc_* grant fields. The base grant (plan/status/expires_at)
  * belongs to access-code redemption and is never touched here.
  */
 export default async function(req) {
